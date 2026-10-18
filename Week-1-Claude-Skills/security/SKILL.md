@@ -23,7 +23,7 @@ The OWASP Top 10 is the industry list of the most critical web application secur
 | **A06** | **Insecure Design** | Threat-model early; apply secure design patterns; build in rate limiting and abuse resistance by design, not as a patch. |
 | **A07** | **Authentication Failures** | Enforce MFA, strong session handling, and protection against credential stuffing and brute force (see section 3). |
 | **A08** | **Software or Data Integrity Failures** | Verify integrity of updates, plugins, and deserialized data; use signatures; don't deserialize untrusted data. |
-| **A09** | **Logging & Alerting Failures** | Log security-relevant events, monitor them, and alert on suspicious activity — without logging secrets or personal data in the clear. |
+| **A09** | **Security Logging and Alerting Failures** | Log security-relevant events, monitor them, and alert on suspicious activity — without logging secrets or personal data in the clear. |
 | **A10** | **Mishandling of Exceptional Conditions** | Handle errors and edge cases deliberately; fail securely (deny on error); never leak stack traces or internal detail to users. |
 
 Reference the official list before relying on details: https://owasp.org/www-project-top-ten/
