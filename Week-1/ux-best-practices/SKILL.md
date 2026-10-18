@@ -15,7 +15,7 @@ Use this skill whenever you build or change a user-facing interface: web apps, w
 - **Prevent errors, then help people recover.** Constrain inputs, confirm destructive actions, and support undo where you can.
 - **Recognition over recall.** Keep options, context, and previous inputs visible. Don't make users remember things between screens.
 - **Honest design.** Don't trick or pressure users: no pre-ticked opt-ins, hidden costs, fake urgency, or cancelling that is harder than signing up.
-- **Accessible by default.** Aim for WCAG 2.2 AA (see section 6).
+- **Accessible by default.** Design so everyone can use the interface. Detailed accessibility checks (WCAG 2.2 AA) live in the separate accessibility skill.
 
 ## 2. Avoid dark themes: light theme by default
 
@@ -84,7 +84,7 @@ Before delivering, check each screen:
 
 ## 6. Pre-delivery review: usability
 
-Run through Nielsen's 10 heuristics and accessibility basics:
+Run through Nielsen's 10 heuristics:
 
 ### Heuristics
 
@@ -98,18 +98,6 @@ Run through Nielsen's 10 heuristics and accessibility basics:
 - Aesthetic and minimalist design (remove what doesn't help the task)
 - Help users recognize, diagnose, and recover from errors (section 4)
 - Help and documentation available where tasks are complex
-
-### Accessibility (WCAG 2.2 AA)
-
-- Text contrast at least 4.5:1 (3:1 for large text and UI components)
-- Everything works by keyboard, in a logical tab order, with a visible focus indicator
-- Touch and click targets at least 24×24px (44×44px recommended on mobile)
-- All images have meaningful alt text (or empty alt if decorative)
-- Form fields have visible labels (placeholders are not labels)
-- Semantic HTML first (button, nav, main, label), ARIA only where needed
-- Respects `prefers-reduced-motion`; no flashing content
-- Page works when zoomed to 200%
-- Light theme confirmed (section 2)
 
 ## 7. Pre-delivery review: psychological principles of UX
 
@@ -162,7 +150,7 @@ Use these principles to help users, never to manipulate them (for example, don't
 1. Fix every issue the reviews found before delivering. If something can't be fixed (for example, it is out of scope or needs a product decision), don't hide it.
 2. When you hand over the work, include a short UX review summary:
    - Hierarchy: pass, or what was adjusted
-   - Usability and accessibility: pass, or the issues fixed
+   - Usability: pass, or the issues fixed
    - Psychological principles: pass, or the principles that drove changes
    - Known limitations or open questions for the user
 3. Keep the summary brief: a few lines, not a full report, unless the user asks for one.
