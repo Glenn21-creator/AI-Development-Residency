@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Application Portal</title>
+  <meta name="description" content="Sign in and register a job application." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="app-header">
+    <div class="app-header__inner">
+      <span class="brand" aria-hidden="true">◆</span>
+      <span class="brand-name">Northwind Careers</span>
+      <button id="logoutBtn" type="button" class="btn btn--text" hidden>Log out</button>
+    </div>
+  </header>
+
+  <main id="main" class="main" tabindex="-1">
+
+    <!-- ============ LOGIN VIEW ============ -->
+    <section id="loginView" class="view" aria-labelledby="loginHeading">
+      <div class="card card--narrow">
+        <h1 id="loginHeading">Sign in</h1>
+        <p class="muted">Sign in to register a job application.</p>
+
+        <div class="demo-banner" role="note">
+          <strong>Demo credentials</strong>
+          <p>Username: <code>applicant</code> &nbsp;·&nbsp; Password: <code>Demo-Pass-2026</code></p>
+          <p class="demo-banner__note">This is a front-end demo. See the security note before any real use.</p>
+        </div>
+
+        <div id="loginError" class="alert alert--error" role="alert" hidden></div>
+
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" autocomplete="username"
+                   required aria-describedby="usernameErr" />
+            <p id="usernameErr" class="field__error" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="password-wrap">
+              <input id="password" name="password" type="password" autocomplete="current-password"
+                     required aria-describedby="passwordErr" />
+              <button type="button" id="togglePassword" class="btn btn--text password-toggle"
+                      aria-pressed="false">Show</button>
+            </div>
+            <p id="passwordErr" class="field__error" hidden></p>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block">Sign in</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ APPLICATION VIEW ============ -->
+    <section id="appView" class="view" aria-labelledby="appHeading" hidden>
+      <div class="card">
+        <h1 id="appHeading">Register a job application</h1>
+        <p class="muted">Fields marked <span class="req" aria-hidden="true">*</span> are required.</p>
+
+        <div id="formError" class="alert alert--error" role="alert" hidden></div>
+
+        <form id="applicationForm" novalidate>
+          <fieldset>
+            <legend>Your details</legend>
+
+            <div class="field">
+              <label for="fullName">Full name <span class="req" aria-hidden="true">*</span></label>
+              <input id="fullName" name="fullName" type="text" autocomplete="name"
+                     required aria-describedby="fullNameErr" />
+              <p id="fullNameErr" class="field__error" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="email">Email address <span class="req" aria-hidden="true">*</span></label>
+              <input id="email" name="email" type="email" autocomplete="email" inputmode="email"
+                     required aria-describedby="emailErr" />
+              <p id="emailErr" class="field__error" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="phone">Phone number</label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel"
+                     aria-describedby="phoneHint" />
+              <p id="phoneHint" class="field__hint">Optional. Include country code if outside the US.</p>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>The role</legend>
+
+            <div class="field">
+              <label for="position">Position <span class="req" aria-hidden="true">*</span></label>
+              <select id="position" name="position" required aria-describedby="positionErr">
+                <option value="">Select a position…</option>
+                <option value="Frontend Engineer">Frontend Engineer</option>
+                <option value="Backend Engineer">Backend Engineer</option>
+                <option value="Product Designer">Product Designer</option>
+                <option value="Data Analyst">Data Analyst</option>
+                <option value="Project Manager">Project Manager</option>
+              </select>
+              <p id="positionErr" class="field__error" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="experience">Years of experience <span class="req" aria-hidden="true">*</span></label>
+              <input id="experience" name="experience" type="number" min="0" max="60" step="1"
+                     required aria-describedby="experienceErr" />
+              <p id="experienceErr" class="field__error" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="start">Earliest start date</label>
+              <input id="start" name="start" type="date" aria-describedby="startHint" />
+              <p id="startHint" class="field__hint">Optional.</p>
+            </div>
+
+            <div class="field">
+              <label for="cover">Cover note</label>
+              <textarea id="cover" name="cover" rows="4" maxlength="1000"
+                        aria-describedby="coverHint"></textarea>
+              <p id="coverHint" class="field__hint">Optional. Up to 1000 characters.</p>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Consent</legend>
+            <div class="field field--check">
+              <input id="consent" name="consent" type="checkbox" required aria-describedby="consentErr" />
+              <label for="consent">I agree that my details may be stored to process this application.
+                <span class="req" aria-hidden="true">*</span></label>
+            </div>
+            <p id="consentErr" class="field__error" hidden></p>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Submit application</button>
+            <button type="reset" class="btn btn--outline">Clear form</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card" aria-labelledby="submittedHeading">
+        <h2 id="submittedHeading">Submitted applications</h2>
+        <p id="emptyState" class="muted">No applications registered yet in this session.</p>
+        <ul id="applicationList" class="app-list" aria-live="polite"></ul>
+      </div>
+    </section>
+
+    <!-- ============ SUCCESS VIEW ============ -->
+    <section id="successView" class="view" aria-labelledby="successHeading" hidden>
+      <div class="card card--narrow card--center">
+        <div class="success-mark" aria-hidden="true">✓</div>
+        <h1 id="successHeading">Application registered</h1>
+        <p id="successDetail" class="muted"></p>
+        <button id="anotherBtn" type="button" class="btn btn--primary">Register another</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>Demo project · Front-end only. <a href="#" id="securityNoteLink">Security &amp; privacy note</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
