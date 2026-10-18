@@ -1,6 +1,6 @@
 ---
 name: ux-best-practices
-description: Apply UX best practices when building any software, web app, site, or UI: light theme by default, consistent type and layout, clear errors, and a pre-delivery hierarchy, usability and UX-psychology check.
+description: "Apply UX best practices when building any software, web app, site, or UI: light theme by default, consistent type and layout, clear errors, and a pre-delivery hierarchy, usability and UX-psychology check."
 ---
 
 # UX Best Practices
