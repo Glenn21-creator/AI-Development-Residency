@@ -21,7 +21,7 @@ Use this skill whenever you build or change a user-facing interface: web apps, w
 - Build interfaces with a light theme: light backgrounds (white or near-white, e.g. `#FFFFFF` or `#F8F9FA`) and dark text (e.g. `#1A1A1A` to `#333333`).
 - Do not use dark backgrounds for pages, panels, cards, or modals.
 - Do not switch to dark mode automatically based on `prefers-color-scheme`.
-- Only add a dark theme or dark-mode toggle if the user explicitly asks for one. If they do, build it as an option, keep light as the default, and check contrast separately for the dark version.
+- Only add a dark theme or dark-mode toggle if the user explicitly asks for one. If they do, build it as an option and keep light as the default.
 - Small dark accents are fine where they aid clarity (for example, a dark tooltip or a code block), but the overall interface stays light.
 
 ## 3. Consistent typography and layout
@@ -59,7 +59,7 @@ Every error message should answer: what happened, why, and how to fix it.
 - Show the error next to the field it relates to, and also summarize it at the top for long forms.
 - Validate inline at the right moment: on blur or on submit, not on every keystroke while the user is still typing.
 - Keep what the user typed. Never clear a form because of an error.
-- Use more than color: an icon, text, and `aria-invalid` / `aria-describedby` so screen readers announce it.
+- Use more than color: pair it with an icon and text.
 - Move focus to the first error (or the error summary) on submit.
 - For system or network errors, say what the user can do (retry, check connection, contact support) and provide a retry button where possible.
 - Design empty states and 404 or other failure pages that point users somewhere useful.
