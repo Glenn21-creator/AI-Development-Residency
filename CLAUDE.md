@@ -8,5 +8,5 @@ showing me the result:
 - accessibility
 - security
 
-If a task clearly doesn't relate to one of them, you may skip that one — but
+If a task clearly doesn't relate to one of them, you may skip that one, but
 say which you skipped and why.
