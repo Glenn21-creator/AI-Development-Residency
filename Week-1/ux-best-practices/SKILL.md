@@ -15,7 +15,6 @@ Use this skill whenever you build or change a user-facing interface: web apps, w
 - **Prevent errors, then help people recover.** Constrain inputs, confirm destructive actions, and support undo where you can.
 - **Recognition over recall.** Keep options, context, and previous inputs visible. Don't make users remember things between screens.
 - **Honest design.** Don't trick or pressure users: no pre-ticked opt-ins, hidden costs, fake urgency, or cancelling that is harder than signing up.
-- **Accessible by default.** Design so everyone can use the interface. Detailed accessibility checks (WCAG 2.2 AA) live in the separate accessibility skill.
 
 ## 2. Avoid dark themes: light theme by default
 
