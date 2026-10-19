@@ -1,0 +1,14 @@
+{
+    "hooks": {
+        "SessionStart": [
+            {
+                "hooks":[
+                    {
+                        "type": "command",
+                        "command":"echo Before answering, check which skills in .claude/skills apply to this task and use the relevant ones."
+                    }
+                ]
+            }
+        ]
+    }
+}
