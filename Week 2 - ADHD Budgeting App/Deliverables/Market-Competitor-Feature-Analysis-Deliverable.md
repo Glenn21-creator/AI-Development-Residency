@@ -123,4 +123,47 @@ This is the important block. These are the features our personas most need, and 
 
 ---
 
+## 4. Product Positioning and Unique Value Proposition
+
+This section turns the market and competitor findings above into how Hyper Budget is positioned. It builds directly on the feature comparison: the ADHD essentials are now table stakes in this niche, so the positioning is built on the gaps the competitor table shows almost no one fills.
+
+### Who it is for
+
+People with ADHD whose executive-function challenges make conventional budgeting fail, captured in the three personas from the audience work: students managing money for the first time, parents holding the household together, and late-diagnosed adults rebuilding self-trust. The sharpest entry point is the person who has already tried a budgeting app and quit.
+
+### The problem it solves
+
+Traditional budgeting relies on the focus, memory, and consistency that ADHD makes unreliable, so people lose track of spending, buy on impulse, miss bills, avoid their accounts out of shame, and abandon the tools that were supposed to help. The competitor analysis confirms the pattern: even well-loved apps like YNAB are described as hard work, and Revolut requires you to set up and remember to use the buckets.
+
+### The gap Hyper Budget owns
+
+The feature comparison in section 3c shows the ADHD essentials are no longer unique. Cake Budget already does automatic allocation and a pre-spend safe-to-spend signal, and both Cake and Tucope are shame-free and ADHD-built. So the positioning is not "the only ADHD app." The genuinely open space is narrower:
+
+- Forgiving re-engagement after a lapse, offered by no competitor, direct or mainstream.
+- Built-in ADHD coaching, which only Tucope partly attempts.
+- Dopamine-friendly feedback, partial or absent almost everywhere.
+- A mobile-first build, where the closest rival, Cake Budget, is web-first.
+
+Cake Budget is the main product to beat. Hyper Budget beats it on the pieces it lacks rather than on the pieces it already does well.
+
+### How our impact differs
+
+Mainstream apps (Revolut, YNAB, Monarch, Rocket Money) reduce effort for people who will maintain a system. The direct ADHD apps get the tone and the automatic allocation right but still lose people who fall off. Hyper Budget is built for the moment people usually quit: it keeps working through a lapse, welcomes the user back without shame, and coaches them, so success is measured by staying power rather than feature depth.
+
+### Unique value
+
+Hyper Budget is the ADHD-native budgeting app that keeps you even after you fall off. It protects your essentials automatically, shows a safe-to-spend number in real time, nudges you at the moments that matter, and then welcomes you back without guilt and coaches you through the restart, which is the one thing no competitor does.
+
+### Unique value proposition
+
+"Budgeting that works even when your brain won't, and keeps working after you fall off. Hyper Budget automatically protects your essentials and shows a safe-to-spend number in real time, then welcomes you back without guilt when you drift and coaches you through it, so people with ADHD finally stay with a money app instead of abandoning one more."
+
+### Positioning statement
+
+"For people with ADHD who have tried budgeting apps and quit, Hyper Budget is a mobile-first, ADHD-native budgeting app that automatically ring-fences essentials, shows a real-time safe-to-spend number, and welcomes you back without shame after a lapse. Unlike mainstream apps such as Revolut, YNAB, and Monarch, which are not built for ADHD and demand constant upkeep, and unlike the closest ADHD-built rival, Cake Budget, which is web-first and does nothing to help you restart after you fall off, Hyper Budget wins on forgiving re-engagement, dopamine-friendly feedback, and built-in ADHD coaching."
+
+**What this means:** match the ADHD table stakes (automatic allocation, safe-to-spend, shame-free tone), then win the market on forgiving re-engagement, built-in coaching, dopamine-friendly feedback, and a mobile-first build, positioned head-to-head against Cake Budget.
+
+---
+
 *Prepared 24 October 2026. The ADHD budgeting market-size and growth figures are estimates, not tracked numbers. Feature ratings show whether a feature exists, not how well it works, and the "Our App" row is the planned product.*
