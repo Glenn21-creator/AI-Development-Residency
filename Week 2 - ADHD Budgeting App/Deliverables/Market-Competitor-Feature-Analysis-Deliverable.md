@@ -166,4 +166,60 @@ Hyper Budget is the ADHD-native budgeting app that keeps you even after you fall
 
 ---
 
+## 5. Positioning by Audience
+
+The same positioning format, filled in for each of our three audiences. The problems come from the personas and use cases, and the competitor points come from the competitor table above. Written in plain English.
+
+### Audience: Students managing money for the first time
+
+**Our product solves the following problems:**
+
+- Their money runs out on small, non-urgent buys before food and rent are covered.
+- They buy on impulse and only feel the cost later, when money is short.
+- They would rather go without, even go hungry, than ask anyone for help.
+
+**Other businesses in the space:**
+
+- The apps a student might try are not built for a small, uneven budget. YNAB has no free plan and is a lot of work, and Revolut makes you set up and remember to use its buckets yourself.
+
+**Unlike other businesses, Hyper Budget:**
+
+- Sets aside food and rent money automatically, shows a clear safe-to-spend number, is free to start, and needs almost no upkeep. When they drift, it welcomes them back without shame, so staying on track never means having to ask for help.
+
+### Audience: Parents holding the household together
+
+**Our product solves the following problems:**
+
+- Bills get forgotten in the daily rush, which leads to late fees and overdrafts that hit the whole family.
+- Impulse buys turn into money arguments with a partner.
+- Budgeting takes more time and effort than they have, so they give up on it.
+
+**Other businesses in the space:**
+
+- Monarch and Revolut let partners share a view, but they take real effort to set up and are not built for ADHD. YNAB allows shared budgets but needs daily attention.
+
+**Unlike other businesses, Hyper Budget:**
+
+- Tracks bills and sets money aside for them on its own, lets a partner share the view if they want, and runs with almost no upkeep. It keeps working through the weeks a busy parent cannot check in, and welcomes them back with no blame instead of leaving a pile to fix.
+
+### Audience: Late-diagnosed adults rebuilding self-trust
+
+**Our product solves the following problems:**
+
+- Money that should be enough leaks away on impulse buys and forgotten subscriptions, and savings never build up.
+- Years of shame make them avoid their money and not look at it at all.
+- Normal budgeting apps need willpower and memory, so they set them up and then drop them.
+
+**Other businesses in the space:**
+
+- Cake Budget is the closest. It sets money aside automatically and shows a safe-to-spend signal, but it is web-first and does nothing to help you start again after you fall off. Tucope is shame-free and built for ADHD, but it is new, thin on features, and unproven. Mainstream apps like Revolut, YNAB, and Monarch are not built for ADHD and need upkeep.
+
+**Unlike other businesses, Hyper Budget:**
+
+- Is kind and shame-free by design, spots recurring and forgotten charges, and saves a set amount so a cushion finally grows. Most of all, it does the one thing no rival does: it keeps running through a lapse, welcomes you back without guilt, and coaches you through the restart, on mobile, which is what rebuilds self-trust.
+
+**What this means:** every audience shares the same core win (money protected automatically, a clear safe-to-spend number, and a shame-free restart), with one point tuned per group: a free, no-upkeep start for students, automatic bills and optional partner sharing for parents, and forgiving re-engagement plus coaching for late-diagnosed adults.
+
+---
+
 *Prepared 24 October 2026. The ADHD budgeting market-size and growth figures are estimates, not tracked numbers. Feature ratings show whether a feature exists, not how well it works, and the "Our App" row is the planned product.*
