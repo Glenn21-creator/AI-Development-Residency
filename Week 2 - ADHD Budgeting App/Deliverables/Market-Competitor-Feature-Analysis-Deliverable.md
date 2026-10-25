@@ -94,11 +94,12 @@ These are table stakes. Nearly everyone has them, so the job here is to match th
 
 ### 3b. Power features (useful extras, only some apps have them)
 
-These add value but are not where the ADHD fight is won. Two are worth noting: subscription cleanup is Rocket Money's territory (so we detect subscriptions but do not try to beat it on cancellation or bill negotiation), and multi-currency and open banking only move up our list if we target Europe.
+These add value but are not where the ADHD fight is won, with one deliberate exception. Subscription handling is now an area we choose to compete in: we flag forgotten subscriptions in the MVP and add cancellation help in the MMP, taking on Rocket Money directly on cleanup, though not on bill negotiation. This is an ambitious bet, since cancellation is Rocket Money's signature feature. Separately, multi-currency and open banking only move up our list if we target Europe.
 
 | Feature | Our App | Cake | Tucope | Moneko | Auritrack | Rocket | YNAB | Monarch | Revolut |
 |---|---|---|---|---|---|---|---|---|---|
-| Subscription detection | Later | No | No | No | Yes | Yes | No | Yes | Partial |
+| Subscription detection | Yes | No | No | No | Yes | Yes | No | Yes | Partial |
+| Subscription cancellation help | Later | No | No | No | No | Yes | No | No | No |
 | Investment / net worth tracking | No | No | No | No | No | Yes | Partial | Yes | Yes |
 | AI assistant / chat | Yes | Yes | Yes | Yes | Yes | Partial | No | Yes | Partial |
 | Multi-input capture (voice, receipt, chat) | Later | No | Partial | Yes | Yes | No | No | Partial | No |
@@ -119,7 +120,7 @@ This is the important block. These are the features our personas most need, and 
 | Visual at-a-glance cues | Yes | Yes | Partial | Partial | Partial | Partial | Partial | Partial | Partial |
 | Built-in ADHD coaching | Yes | No | Partial | No | No | No | No | No | No |
 
-**What this means:** match the core features, do not chase the mainstream power features, and concentrate the build on the ADHD block, especially the four things almost no one does (proactive pre-purchase nudges, forgiving re-engagement, dopamine-friendly feedback, and ADHD coaching). Cake already does auto-allocation and a traffic light, so to beat it we win on the pieces it still lacks, plus a mobile-first build.
+**What this means:** match the core features, concentrate the build on the ADHD block, especially the four things almost no one does (proactive pre-purchase nudges, forgiving re-engagement, dopamine-friendly feedback, and ADHD coaching), and leave most mainstream power features alone, with one deliberate exception: subscription cleanup, where we choose to take on Rocket Money directly (flag in the MVP, cancellation help in the MMP). Cake already does auto-allocation and a traffic light, so to beat it we win on the pieces it still lacks, plus a mobile-first build.
 
 ---
 
@@ -222,4 +223,4 @@ The same positioning format, filled in for each of our three audiences. The prob
 
 ---
 
-*Prepared 24 October 2026. The ADHD budgeting market-size and growth figures are estimates, not tracked numbers. Feature ratings show whether a feature exists, not how well it works, and the "Our App" row is the planned product.*
+*Prepared 24 October 2026; revised 25 October 2026 to reflect the decision to compete on subscription cleanup (flagging in the MVP, cancellation help in the MMP). The ADHD budgeting market-size and growth figures are estimates, not tracked numbers. Feature ratings show whether a feature exists, not how well it works, and the "Our App" row is the planned product.*
