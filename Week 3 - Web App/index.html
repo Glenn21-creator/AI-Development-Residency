@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hyper Budget</title>
+
+  <!--
+    HYPER BUDGET - clickable prototype
+    =================================================
+    This is ONE file: structure (HTML), styling (CSS in <style>),
+    and behaviour (JavaScript at the bottom). No installs, no server.
+    Just open this file in a web browser.
+
+    All data is FAKE and hard-coded in the SAMPLE object near the
+    bottom. Nothing connects to a real bank. That is what makes it a
+    prototype: it looks and feels real, but there is no plumbing behind
+    the walls.
+  -->
+
+  <style>
+    /* ---- 1. Design tokens --------------------------------------
+       "Tokens" are named values we reuse everywhere, so the whole app
+       stays consistent. Change one here and it updates every screen. */
+    :root {
+      --bg:        #f4f6f8;   /* calm light background */
+      --surface:   #ffffff;   /* cards sit on white */
+      --ink:       #1f2933;   /* main text: dark, easy to read */
+      --ink-soft:  #52606d;   /* secondary text */
+      --line:      #e3e8ee;   /* subtle borders */
+
+      --safe:      #2f9e67;   /* green for graphics and the big number */
+      --safe-ink:  #157347;   /* darker green for small text, passes AA contrast */
+      --safe-soft: #e7f5ee;
+      --heed:      #b7791f;   /* amber for graphics, gentle heads-up never alarm */
+      --heed-ink:  #8a5a14;   /* darker amber for small text, passes AA contrast */
+      --heed-soft: #fdf6e7;
+      --brand:     #2f5bd6;   /* primary action colour, passes AA with white text */
+      --brand-ink: #ffffff;
+
+      --radius: 16px;
+      --shadow: 0 1px 3px rgba(31,41,51,.08), 0 4px 16px rgba(31,41,51,.05);
+
+      /* spacing scale (multiples of 4px) keeps rhythm consistent */
+      --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+      --s5: 24px; --s6: 32px; --s7: 48px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 16px;            /* never smaller: easy to read */
+      line-height: 1.5;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    /* The phone-sized frame, since the real app is mobile-first. */
+    .phone {
+      max-width: 420px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- 2. Top bar ------------------------------------------- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--s5) var(--s4) var(--s2);
+    }
+    .topbar h1 { font-size: 20px; margin: 0; }
+    .topbar .hi { color: var(--ink-soft); font-size: 15px; }
+
+    /* a quiet secondary button (hide balances) */
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink-soft);
+      border-radius: 999px;
+      padding: var(--s2) var(--s3);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .ghost-btn:hover { background: #f0f3f7; }
+
+    /* ---- 3. Screen + cards ------------------------------------ */
+    .screen { padding: 0 var(--s4) var(--s7); flex: 1; }
+    .screen[hidden] { display: none; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: var(--s5);
+      margin-top: var(--s4);
+    }
+
+    /* The hero: the safe-to-spend number. Biggest thing on the screen. */
+    .hero { text-align: center; background: var(--safe-soft); border-color: #cfe9db; }
+    .hero .label { color: var(--ink-soft); font-size: 15px; margin: 0; }
+    .hero .amount {
+      font-size: 52px;
+      font-weight: 700;
+      color: var(--safe);
+      margin: var(--s2) 0 var(--s1);
+      letter-spacing: -1px;
+    }
+    .hero .sub { color: var(--ink-soft); font-size: 14px; margin: 0; }
+
+    /* reassurance line - leads with what is SAFE, per ADHD rules */
+    .reassure {
+      display: flex; gap: var(--s2); align-items: center;
+      justify-content: center;
+      margin-top: var(--s4);
+      color: var(--safe-ink);
+      font-weight: 600; font-size: 15px;
+    }
+
+    .section-title {
+      font-size: 13px; text-transform: uppercase; letter-spacing: .5px;
+      color: var(--ink-soft); margin: var(--s6) var(--s1) 0;
+    }
+
+    /* a bucket row */
+    .bucket { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) 0; }
+    .bucket + .bucket { border-top: 1px solid var(--line); }
+    .bucket .emoji { font-size: 24px; width: 32px; text-align: center; }
+    .bucket .body { flex: 1; min-width: 0; }
+    .bucket .name { font-weight: 600; }
+    .bucket .meta { color: var(--ink-soft); font-size: 14px; }
+    .bucket .amt { font-weight: 700; white-space: nowrap; }
+
+    /* status chip - ALWAYS colour + word + icon, never colour alone */
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 13px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+    }
+    .chip.safe { background: var(--safe-soft); color: var(--safe-ink); }
+    .chip.heed { background: var(--heed-soft); color: var(--heed-ink); }
+
+    /* progress bar (fun money + savings) */
+    .bar { height: 8px; background: #eef1f5; border-radius: 999px; overflow: hidden; margin-top: var(--s2); }
+    .bar > i { display: block; height: 100%; border-radius: 999px; }
+    .bar.safe > i { background: var(--safe); }
+    .bar.heed > i { background: var(--heed); }
+
+    /* primary action - one clear main choice, same spot every screen */
+    .primary-btn {
+      display: block; width: 100%;
+      background: var(--brand); color: var(--brand-ink);
+      border: none; border-radius: var(--radius);
+      padding: var(--s4); margin-top: var(--s5);
+      font-size: 17px; font-weight: 600; cursor: pointer;
+    }
+    .primary-btn:hover { filter: brightness(.96); }
+
+    /* ---- 4. Bottom navigation -------------------------------- */
+    .nav {
+      position: sticky; bottom: 0;
+      display: flex; background: var(--surface);
+      border-top: 1px solid var(--line);
+    }
+    .nav button {
+      flex: 1; border: none; background: none; cursor: pointer;
+      padding: var(--s3) 0 var(--s4);
+      color: var(--ink-soft); font-size: 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .nav button .ic { font-size: 20px; }
+    .nav button[aria-current="page"] { color: var(--brand); font-weight: 600; }
+
+    /* focus ring for keyboard users - accessibility */
+    :focus-visible { outline: 3px solid #9db8fb; outline-offset: 2px; }
+
+    /* skip link: hidden until a keyboard user tabs to it */
+    .skip {
+      position: absolute; left: var(--s4); top: -60px; z-index: 10;
+      background: var(--brand); color: #fff;
+      padding: var(--s2) var(--s3); border-radius: 10px;
+      transition: top .15s;
+    }
+    .skip:focus { top: var(--s2); }
+
+    .placeholder { text-align: center; color: var(--ink-soft); padding: var(--s7) var(--s4); }
+    .placeholder .big { font-size: 40px; }
+
+    /* ---- 5. Alerts (gentle nudges) --------------------------- */
+    .alert { display: flex; gap: var(--s3); align-items: flex-start; }
+    .alert .ic2 { font-size: 22px; width: 30px; text-align: center; flex: none; }
+    .alert .txt { flex: 1; }
+    .alert .txt b { display: block; }
+    .alert .txt span { color: var(--ink-soft); font-size: 14px; }
+    .mini-btn {
+      margin-top: var(--s3); border: 1px solid var(--line); background: var(--surface);
+      color: var(--brand); font-weight: 600; border-radius: 10px;
+      padding: var(--s2) var(--s3); font-size: 14px; cursor: pointer;
+    }
+    .mini-btn:hover { background: #f0f3f7; }
+
+    /* ---- 6. Buckets detail (allocation + due-and-covered) ---- */
+    .alloc { display: flex; justify-content: space-between; padding: var(--s3) 0; }
+    .alloc + .alloc { border-top: 1px solid var(--line); }
+    .alloc .k { color: var(--ink-soft); }
+    .working {
+      background: #f0f3f7; border-radius: 12px; padding: var(--s4);
+      margin-top: var(--s4); font-size: 14px; color: var(--ink-soft);
+    }
+    .working b { color: var(--ink); }
+    .due { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) 0; }
+    .due + .due { border-top: 1px solid var(--line); }
+    .due .d { flex: 1; }
+    .due .d small { color: var(--ink-soft); }
+
+    /* ---- 7. Savings goal ------------------------------------- */
+    .goal-amt { font-size: 40px; font-weight: 700; text-align: center; margin: var(--s2) 0; }
+    .goal-amt small { font-size: 18px; color: var(--ink-soft); font-weight: 600; }
+
+    /* ---- 8. Welcome-back overlay (forgiving re-engagement) --- */
+    .overlay {
+      position: fixed; inset: 0; z-index: 20;
+      background: rgba(31, 41, 51, .35);          /* soft dim, not harsh black */
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--s4);
+    }
+    .overlay[hidden] { display: none; }
+    .welcome {
+      background: var(--surface); border-radius: 20px;
+      max-width: 380px; width: 100%;
+      padding: var(--s6) var(--s5); box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .welcome .wave { font-size: 48px; }
+    .welcome h2 { margin: var(--s2) 0 var(--s1); font-size: 24px; }
+    .welcome h2:focus { outline: none; }         /* focus moves here silently */
+    .welcome .lead { color: var(--ink-soft); margin: 0; }
+    /* the reassurance panel: what kept working while they were gone */
+    .kept {
+      text-align: left; background: var(--safe-soft); border: 1px solid #cfe9db;
+      border-radius: 14px; padding: var(--s4); margin: var(--s5) 0 var(--s4);
+    }
+    .kept b { display: block; margin-bottom: var(--s2); color: var(--safe-ink); }
+    .kept ul { margin: 0; padding-left: var(--s5); }
+    .kept li { margin: var(--s1) 0; }
+    .welcome .now { font-size: 15px; color: var(--ink-soft); margin: var(--s4) 0 0; }
+    /* quiet demo trigger - honest about being a prototype control */
+    .demo-link {
+      display: block; width: 100%; margin-top: var(--s5);
+      background: none; border: none; color: var(--ink-soft);
+      font-size: 13px; text-decoration: underline; cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="phone">
+
+    <!-- Keyboard users can jump straight to the content, past the top bar -->
+    <a class="skip" href="#main">Skip to content</a>
+
+    <!-- Top bar: a warm greeting + a quiet way to hide balances -->
+    <header class="topbar">
+      <div>
+        <div class="hi">Good afternoon,</div>
+        <h1>Maya 👋</h1>
+      </div>
+      <button class="ghost-btn" id="hideBtn" aria-pressed="false">Hide balances</button>
+    </header>
+
+    <!-- One <main> landmark wraps every screen; each screen is a <section> -->
+    <main id="main">
+
+    <!-- ============ HOME SCREEN ============ -->
+    <section class="screen" id="screen-home" aria-label="Home">
+
+      <!-- Hero: the safe-to-spend number -->
+      <section class="card hero" aria-label="Safe to spend">
+        <p class="label">Safe to spend right now</p>
+        <p class="amount money" id="sts">€68</p>
+        <p class="sub">This is yours to spend. Essentials and bills are already set aside.</p>
+        <p class="reassure">✅ You're on track this week</p>
+      </section>
+
+      <!-- Buckets overview -->
+      <p class="section-title">Your money, sorted automatically</p>
+      <section class="card" aria-label="Buckets">
+
+        <div class="bucket">
+          <span class="emoji" aria-hidden="true">🥗</span>
+          <div class="body">
+            <div class="name">Food &amp; rent</div>
+            <div class="meta">Set aside first, kept safe</div>
+          </div>
+          <div style="text-align:right">
+            <div class="amt money">€500</div>
+            <span class="chip safe">✓ Safe</span>
+          </div>
+        </div>
+
+        <div class="bucket">
+          <span class="emoji" aria-hidden="true">📄</span>
+          <div class="body">
+            <div class="name">Bills</div>
+            <div class="meta">3 bills, all covered</div>
+          </div>
+          <div style="text-align:right">
+            <div class="amt money">€120</div>
+            <span class="chip safe">✓ Covered</span>
+          </div>
+        </div>
+
+        <div class="bucket">
+          <span class="emoji" aria-hidden="true">🐷</span>
+          <div class="body">
+            <div class="name">Savings cushion</div>
+            <div class="meta">Building quietly. €40 of €300</div>
+            <div class="bar safe"><i style="width:13%"></i></div>
+          </div>
+          <div style="text-align:right">
+            <div class="amt money">€40</div>
+          </div>
+        </div>
+
+        <div class="bucket">
+          <span class="emoji" aria-hidden="true">🎉</span>
+          <div class="body">
+            <div class="name">Fun money</div>
+            <div class="meta">€112 of €180 used this week</div>
+            <div class="bar heed"><i style="width:62%"></i></div>
+          </div>
+          <div style="text-align:right">
+            <div class="amt money">€68 left</div>
+            <span class="chip heed">⚑ Over halfway</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- One clear primary action -->
+      <button class="primary-btn" onclick="go('alerts')">See what needs a look</button>
+
+      <!-- Prototype demo control: shows what reopening after a gap feels like -->
+      <button class="demo-link" onclick="openWelcome()">Demo: reopen the app after 3 weeks away</button>
+    </section>
+
+    <!-- ============ PLACEHOLDER SCREENS (built next) ============ -->
+    <!-- ============ BUCKETS SCREEN ============ -->
+    <section class="screen" id="screen-buckets" aria-label="Buckets" hidden>
+
+      <p class="section-title">This period, sorted the moment money landed</p>
+      <section class="card" aria-label="Allocation">
+        <div class="alloc"><span class="k">💶 Income that came in</span><b class="money">€840</b></div>
+        <div class="alloc"><span class="k">🥗 Food &amp; rent (first)</span><b class="money">€500</b></div>
+        <div class="alloc"><span class="k">📄 Bills</span><b class="money">€120</b></div>
+        <div class="alloc"><span class="k">🐷 Savings cushion</span><b class="money">€40</b></div>
+        <div class="alloc"><span class="k">🎉 Fun money</span><b class="money">€180</b></div>
+
+        <!-- "show your working" - the money math skill says the user must
+             always be able to see why the number is what it is -->
+        <div class="working">
+          <b>How your €68 is worked out</b><br>
+          €840 came in. Straight away, €500 went to food &amp; rent, €120 to
+          bills, and €40 to savings, all protected. That left €180 of fun
+          money. You've spent €112, so <b>€68 is safe to spend</b> right now.
+        </div>
+      </section>
+
+      <p class="section-title">What's due and what's covered</p>
+      <section class="card" aria-label="Upcoming bills">
+        <div class="due">
+          <span class="emoji" aria-hidden="true">📱</span>
+          <div class="d">Phone<br><small>Due in 3 days</small></div>
+          <div style="text-align:right"><b class="money">€15</b><br><span class="chip safe">✓ Covered</span></div>
+        </div>
+        <div class="due">
+          <span class="emoji" aria-hidden="true">🌐</span>
+          <div class="d">Internet<br><small>Due in 9 days</small></div>
+          <div style="text-align:right"><b class="money">€35</b><br><span class="chip safe">✓ Covered</span></div>
+        </div>
+        <div class="due">
+          <span class="emoji" aria-hidden="true">🚆</span>
+          <div class="d">Transit pass<br><small>Due in 14 days</small></div>
+          <div style="text-align:right"><b class="money">€70</b><br><span class="chip safe">✓ Covered</span></div>
+        </div>
+      </section>
+
+      <button class="primary-btn" onclick="go('home')">Back to home</button>
+    </section>
+
+    <!-- ============ ALERTS SCREEN ============ -->
+    <section class="screen" id="screen-alerts" aria-label="Alerts" hidden>
+
+      <p class="section-title">A few gentle nudges</p>
+
+      <!-- bill reminder, framed as reassurance (money already set aside) -->
+      <section class="card">
+        <div class="alert">
+          <span class="ic2" aria-hidden="true">📱</span>
+          <div class="txt"><b>Your phone bill is due in 3 days</b>
+            <span>Good news: the €15 is already set aside. Nothing to do.</span></div>
+        </div>
+      </section>
+
+      <!-- threshold heads-up, calm not alarming -->
+      <section class="card">
+        <div class="alert">
+          <span class="ic2" aria-hidden="true">🎉</span>
+          <div class="txt"><b>You're past halfway on fun money</b>
+            <span>€68 of €180 left this week. Still on track, just a heads-up.</span></div>
+        </div>
+      </section>
+
+      <!-- forgotten-subscription flag, with a kind, no-pressure action -->
+      <section class="card">
+        <div class="alert">
+          <span class="ic2" aria-hidden="true">🔁</span>
+          <div class="txt"><b>Still using CloudStore?</b>
+            <span>You've paid €9.99 a month for 4 months. If it's not earning
+              its place, it's easy to stop.</span>
+            <button class="mini-btn"
+              onclick="alert('In the real app, this would help you cancel it. (Prototype)')">
+              Review subscription</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- a light small win - no streaks, no pressure for tomorrow -->
+      <section class="card">
+        <div class="alert">
+          <span class="ic2" aria-hidden="true">✅</span>
+          <div class="txt"><b>Nice — your rent was paid on time</b>
+            <span>That's one less thing to carry today. 🙂</span></div>
+        </div>
+      </section>
+
+      <button class="primary-btn" onclick="go('home')">Back to home</button>
+    </section>
+
+    <!-- ============ SAVINGS SCREEN ============ -->
+    <section class="screen" id="screen-savings" aria-label="Savings" hidden>
+
+      <section class="card hero" aria-label="Savings cushion">
+        <p class="label">Your safety net is growing</p>
+        <p class="goal-amt"><span class="money">€40</span> <small>of €300</small></p>
+        <div class="bar safe"><i style="width:13%"></i></div>
+        <p class="sub" style="margin-top:var(--s4)">
+          A little is tucked away from every deposit, automatically. No effort needed.</p>
+      </section>
+
+      <section class="card">
+        <div class="bucket" style="border:none">
+          <span class="emoji" aria-hidden="true">🌱</span>
+          <div class="body">
+            <div class="name">Started 2 weeks ago</div>
+            <div class="meta">€20 from each deposit · on your way to a €300 cushion</div>
+          </div>
+        </div>
+      </section>
+
+      <p class="section-title" style="text-align:center;margin-top:var(--s5)">
+        No pressure, no deadline. It builds while you live your life.</p>
+
+      <button class="primary-btn"
+        onclick="alert('In the real app, you could change your goal here. (Prototype)')">
+        Adjust my goal</button>
+    </section>
+
+    </main>
+
+    <!-- Bottom navigation -->
+    <nav class="nav" aria-label="Main">
+      <button onclick="go('home')"    data-tab="home"    aria-current="page"><span class="ic" aria-hidden="true">🏠</span>Home</button>
+      <button onclick="go('buckets')" data-tab="buckets"><span class="ic" aria-hidden="true">🗂️</span>Buckets</button>
+      <button onclick="go('alerts')"  data-tab="alerts"><span class="ic" aria-hidden="true">🔔</span>Alerts</button>
+      <button onclick="go('savings')" data-tab="savings"><span class="ic" aria-hidden="true">🐷</span>Savings</button>
+    </nav>
+
+    <!-- ============ WELCOME-BACK OVERLAY (forgiving re-engagement) ============
+         This is the signature feature: what a user sees when they reopen the
+         app after falling off for a while. Warm, no blame, no catch-up chores. -->
+    <div class="overlay" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+      <div class="welcome">
+        <div class="wave" aria-hidden="true">👋</div>
+        <h2 id="welcomeTitle" tabindex="-1">Welcome back, Maya</h2>
+        <p class="lead">It's been a little while, and that's completely okay.</p>
+
+        <div class="kept">
+          <b>✅ While you were away, the app kept going</b>
+          <ul>
+            <li>Your food &amp; rent stayed protected</li>
+            <li>2 bills were paid on time from their buckets</li>
+            <li>Small amounts kept building your safety net</li>
+          </ul>
+        </div>
+
+        <p class="now">Nothing to catch up on. You have <b>€68 safe to spend</b> right now.</p>
+        <button class="primary-btn" onclick="closeWelcome()">Pick up where I left off</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ---- Behaviour ------------------------------------------------
+       Two small jobs for now:
+       1) switch between screens when a nav tab is tapped
+       2) hide / show the money amounts                              */
+
+    // 1) Navigation: show one screen, hide the rest, mark the active tab.
+    function go(name) {
+      document.querySelectorAll('.screen').forEach(s => {
+        s.hidden = (s.id !== 'screen-' + name);
+      });
+      document.querySelectorAll('.nav button').forEach(b => {
+        if (b.dataset.tab === name) b.setAttribute('aria-current', 'page');
+        else b.removeAttribute('aria-current');
+      });
+      window.scrollTo(0, 0);
+    }
+
+    // 2) Hide balances (a privacy touch for using the app in public).
+    let hidden = false;
+    const hideBtn = document.getElementById('hideBtn');
+    hideBtn.addEventListener('click', () => {
+      hidden = !hidden;
+      hideBtn.textContent = hidden ? 'Show balances' : 'Hide balances';
+      hideBtn.setAttribute('aria-pressed', String(hidden));
+      document.querySelectorAll('.money').forEach(el => {
+        if (hidden) {
+          el.dataset.real = el.textContent;  // remember the real value
+          el.textContent = '••••';
+        } else {
+          el.textContent = el.dataset.real;  // put it back
+        }
+      });
+    });
+
+    // 3) Welcome-back overlay (the forgiving re-engagement feature).
+    function openWelcome() {
+      const o = document.getElementById('welcome');
+      o.hidden = false;
+      document.getElementById('welcomeTitle').focus();  // move focus into the dialog
+    }
+    function closeWelcome() {
+      document.getElementById('welcome').hidden = true;
+    }
+    // Escape closes it, like any well-behaved dialog.
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeWelcome();
+    });
+  </script>
+</body>
+</html>
