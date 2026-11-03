@@ -256,6 +256,31 @@
       background: none; border: none; color: var(--ink-soft);
       font-size: 13px; text-decoration: underline; cursor: pointer;
     }
+
+    /* ---- 9. Log-a-spend dialog ------------------------------- */
+    .qrow { display: flex; gap: var(--s2); margin: var(--s4) 0; }
+    .qrow button {
+      flex: 1; border: 1px solid var(--line); background: var(--surface);
+      border-radius: 12px; padding: var(--s3) 0; font-size: 16px;
+      font-weight: 600; color: var(--ink); cursor: pointer;
+    }
+    .qrow button:hover { background: #f0f3f7; }
+    .field label { display: block; font-size: 14px; color: var(--ink-soft); margin-bottom: var(--s1); }
+    .field input {
+      width: 100%; font-size: 16px; padding: var(--s3);
+      border: 1px solid var(--line); border-radius: 12px;
+    }
+    .field input[aria-invalid="true"] { border-color: #b3261e; }
+    /* kind inline error: icon + text, never colour alone */
+    .err { display: none; color: #b3261e; font-size: 14px; margin-top: var(--s2); }
+    .err.show { display: block; }
+    .outline-btn {
+      display: block; width: 100%; margin-top: var(--s2);
+      background: none; border: 1px solid var(--line); color: var(--ink);
+      border-radius: var(--radius); padding: var(--s3);
+      font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+    .outline-btn:hover { background: #f0f3f7; }
   </style>
 </head>
 
@@ -332,22 +357,23 @@
           <span class="emoji" aria-hidden="true">🎉</span>
           <div class="body">
             <div class="name">Fun money</div>
-            <div class="meta">€112 of €180 used this week</div>
-            <div class="bar heed"><i style="width:62%"></i></div>
+            <div class="meta" id="funMeta">€112 of €180 used this week</div>
+            <div class="bar heed" id="funBarWrap"><i id="funBar" style="width:62%"></i></div>
           </div>
           <div style="text-align:right">
-            <div class="amt money">€68 left</div>
-            <span class="chip heed">⚑ Over halfway</span>
+            <div class="amt money" id="funLeft">€68 left</div>
+            <span class="chip heed" id="funChip">⚑ Over halfway</span>
           </div>
         </div>
 
       </section>
 
-      <!-- One clear primary action -->
-      <button class="primary-btn" onclick="go('alerts')">See what needs a look</button>
+      <!-- One clear primary action: the thing a user does most often -->
+      <button class="primary-btn" onclick="openSpend()">Log a spend</button>
 
-      <!-- Prototype demo control: shows what reopening after a gap feels like -->
+      <!-- Prototype demo controls -->
       <button class="demo-link" onclick="openWelcome()">Demo: reopen the app after 3 weeks away</button>
+      <button class="demo-link" onclick="resetDemo()">Reset demo numbers</button>
     </section>
 
     <!-- ============ PLACEHOLDER SCREENS (built next) ============ -->
@@ -368,7 +394,8 @@
           <b>How your €68 is worked out</b><br>
           €840 came in. Straight away, €500 went to food &amp; rent, €120 to
           bills, and €40 to savings, all protected. That left €180 of fun
-          money. You've spent €112, so <b>€68 is safe to spend</b> right now.
+          money. You've spent <span id="wkSpent">€112</span>, so
+          <b><span id="wkSts">€68</span> is safe to spend</b> right now.
         </div>
       </section>
 
@@ -413,7 +440,7 @@
         <div class="alert">
           <span class="ic2" aria-hidden="true">🎉</span>
           <div class="txt"><b>You're past halfway on fun money</b>
-            <span>€68 of €180 left this week. Still on track, just a heads-up.</span></div>
+            <span><span id="alertFun">€68 of €180 left this week</span>. Still on track, just a heads-up.</span></div>
         </div>
       </section>
 
@@ -500,8 +527,31 @@
           </ul>
         </div>
 
-        <p class="now">Nothing to catch up on. You have <b>€68 safe to spend</b> right now.</p>
+        <p class="now">Nothing to catch up on. You have <b id="welcomeSts">€68 safe to spend</b> right now.</p>
         <button class="primary-btn" onclick="closeWelcome()">Pick up where I left off</button>
+      </div>
+    </div>
+
+    <!-- ============ LOG-A-SPEND DIALOG ============ -->
+    <div class="overlay" id="spend" hidden role="dialog" aria-modal="true" aria-labelledby="spendTitle">
+      <div class="welcome" style="text-align:left">
+        <h2 id="spendTitle" tabindex="-1" style="text-align:center">Log a spend</h2>
+        <p class="lead" style="text-align:center">It comes out of your fun money. Essentials and bills stay safe.</p>
+
+        <div class="qrow">
+          <button type="button" onclick="quickSpend(500)">€5</button>
+          <button type="button" onclick="quickSpend(1000)">€10</button>
+          <button type="button" onclick="quickSpend(2000)">€20</button>
+        </div>
+
+        <div class="field">
+          <label for="spendAmt">Other amount (€)</label>
+          <input id="spendAmt" type="text" inputmode="decimal" placeholder="e.g. 7.50" aria-describedby="spendErr">
+          <p class="err" id="spendErr">⚠ Enter an amount greater than 0, for example 7.50.</p>
+        </div>
+
+        <button class="primary-btn" onclick="logSpend()">Log it</button>
+        <button class="outline-btn" onclick="closeSpend()">Cancel</button>
       </div>
     </div>
 
@@ -525,36 +575,110 @@
       window.scrollTo(0, 0);
     }
 
-    // 2) Hide balances (a privacy touch for using the app in public).
+    // 2) The money model: one source of truth the screen is drawn from.
+    //    Amounts are whole CENTS (never floating point), per safe-to-spend-math.
+    //    We divide by 100 only when showing a number.
+    const START = { balanceC: 72800, essC: 50000, billsC: 12000, savC: 4000,
+                    funTotalC: 18000, funSpentC: 11200 };
+    let S = { ...START };                       // the live copy we change
+
+    function euro(c) {                          // 6800 -> "€68", 750 -> "€7.50"
+      return '€' + (c / 100).toFixed(2).replace(/\.00$/, '');
+    }
+    // safe-to-spend = balance minus everything protected, never below zero.
+    function safeToSpendC() { return Math.max(0, S.balanceC - S.essC - S.billsC - S.savC); }
+    function funLeftC()     { return S.funTotalC - S.funSpentC; }
+
+    // 3) Hide balances (a privacy touch for using the app in public).
     let hidden = false;
+    function setMoney(el, text) {               // write a value, respecting hide mode
+      el.dataset.real = text;
+      el.textContent = hidden ? '••••' : text;
+    }
     const hideBtn = document.getElementById('hideBtn');
     hideBtn.addEventListener('click', () => {
       hidden = !hidden;
       hideBtn.textContent = hidden ? 'Show balances' : 'Hide balances';
       hideBtn.setAttribute('aria-pressed', String(hidden));
       document.querySelectorAll('.money').forEach(el => {
-        if (hidden) {
-          el.dataset.real = el.textContent;  // remember the real value
-          el.textContent = '••••';
-        } else {
-          el.textContent = el.dataset.real;  // put it back
-        }
+        if (!('real' in el.dataset)) el.dataset.real = el.textContent;
+        el.textContent = hidden ? '••••' : el.dataset.real;
       });
     });
 
-    // 3) Welcome-back overlay (the forgiving re-engagement feature).
+    // 4) Draw the live numbers from the model. Called after every change.
+    function render() {
+      const $ = id => document.getElementById(id);
+      const sts = safeToSpendC();
+      setMoney($('sts'), euro(sts));
+
+      const left = funLeftC();
+      const pct = Math.min(100, Math.round(S.funSpentC / S.funTotalC * 100));
+      $('funMeta').textContent = euro(S.funSpentC) + ' of ' + euro(S.funTotalC) + ' used this week';
+      $('funBar').style.width = pct + '%';
+
+      // The status stays calm at every level: no red, no "failed".
+      let tone, text;
+      if (left <= 0)      { tone = 'heed'; text = 'Fun money used up'; }
+      else if (pct >= 80) { tone = 'heed'; text = 'Running low'; }
+      else if (pct >= 50) { tone = 'heed'; text = 'Over halfway'; }
+      else                { tone = 'safe'; text = 'Plenty left'; }
+      $('funBarWrap').className = 'bar ' + tone;
+      const chip = $('funChip');
+      chip.className = 'chip ' + tone;
+      chip.textContent = (tone === 'safe' ? '✓ ' : '⚑ ') + text;
+      setMoney($('funLeft'), euro(Math.max(0, left)) + ' left');
+
+      // keep the other screens' numbers in step
+      if ($('wkSpent'))    $('wkSpent').textContent = euro(S.funSpentC);
+      if ($('wkSts'))      $('wkSts').textContent = euro(sts);
+      if ($('alertFun'))   $('alertFun').textContent = euro(Math.max(0, left)) + ' of ' + euro(S.funTotalC) + ' left this week';
+      if ($('welcomeSts')) $('welcomeSts').textContent = euro(sts) + ' safe to spend';
+    }
+
+    // 5) Log a spend. It always comes out of fun money, never essentials or bills.
+    function openSpend() {
+      const inp = document.getElementById('spendAmt');
+      inp.value = ''; inp.removeAttribute('aria-invalid');
+      document.getElementById('spendErr').classList.remove('show');
+      document.getElementById('spend').hidden = false;
+      document.getElementById('spendTitle').focus();
+    }
+    function closeSpend() { document.getElementById('spend').hidden = true; }
+    function quickSpend(cents) { applySpend(cents); }
+    function logSpend() {
+      const raw = document.getElementById('spendAmt').value.trim().replace(',', '.');
+      const val = Number(raw);
+      if (!raw || isNaN(val) || val <= 0) {    // kind inline error, keeps what they typed
+        const inp = document.getElementById('spendAmt');
+        inp.setAttribute('aria-invalid', 'true');
+        document.getElementById('spendErr').classList.add('show');
+        inp.focus();
+        return;
+      }
+      applySpend(Math.round(val * 100));
+    }
+    function applySpend(cents) {
+      S.funSpentC += cents;   // held against fun money
+      S.balanceC  -= cents;   // and it leaves the account
+      render();
+      closeSpend();
+    }
+    function resetDemo() { S = { ...START }; render(); }
+
+    // 6) Welcome-back overlay (the forgiving re-engagement feature).
     function openWelcome() {
-      const o = document.getElementById('welcome');
-      o.hidden = false;
-      document.getElementById('welcomeTitle').focus();  // move focus into the dialog
+      document.getElementById('welcome').hidden = false;
+      document.getElementById('welcomeTitle').focus();
     }
-    function closeWelcome() {
-      document.getElementById('welcome').hidden = true;
-    }
-    // Escape closes it, like any well-behaved dialog.
+    function closeWelcome() { document.getElementById('welcome').hidden = true; }
+
+    // Escape closes any open dialog, like a well-behaved app.
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeWelcome();
+      if (e.key === 'Escape') { closeWelcome(); closeSpend(); }
     });
+
+    render();   // draw the opening state
   </script>
 </body>
 </html>
