@@ -1,6 +1,6 @@
 ---
 name: dev-workflow
-description: Use this skill at the start of any coding task for Hyper Budget and whenever you are about to write, change, or commit code. It sets how to build: in small, testable steps, checking each piece works before moving on. Follow it so nothing is half-built or left broken, which matters most for a money app.
+description: "Use this skill at the start of any coding task for Hyper Budget and whenever you are about to write, change, or commit code. It sets how to build: in small, testable steps, checking each piece works before moving on. Follow it so nothing is half-built or left broken, which matters most for a money app."
 ---
 
 # Hyper Budget: How to build, step by step
