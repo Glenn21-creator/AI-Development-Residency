@@ -1,6 +1,6 @@
 ---
 name: adhd-ux-guidelines
-description: Use this skill whenever you design or build anything the user sees or reads in Hyper Budget: screens, flows, copy, alerts, empty states, errors, and celebrations. It sets the calm, kind, ADHD-friendly rules (one main choice per screen, no shame language, no streaks, gentle fresh starts) and folds in the UX and accessibility basics. Follow it for every piece of interface.
+description: "Use this skill whenever you design or build anything the user sees or reads in Hyper Budget: screens, flows, copy, alerts, empty states, errors, and celebrations. It sets the calm, kind, ADHD-friendly rules (one main choice per screen, no shame language, no streaks, gentle fresh starts) and folds in the UX and accessibility basics. Follow it for every piece of interface."
 ---
 
 # Hyper Budget: ADHD-friendly UX guidelines
