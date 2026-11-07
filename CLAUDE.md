@@ -33,3 +33,11 @@ which you skipped and why.
 - secrets-and-api-keys: keys and tokens, never in code or git.
 - gdpr-privacy: consent, data export, deletion, data minimisation.
 - security: OWASP, encryption, authentication.
+
+## Architecture decisions
+
+Before building or changing anything in the Hyper Budget app
+(`week-3-hyper-budget`), read every ADR in `week-3-hyper-budget/docs/adr/` and
+respect those decisions. If a change would contradict an ADR, raise it with me
+first rather than quietly diverging. Also read
+`week-3-hyper-budget/ARCHITECTURE.md` for the overall blueprint.
