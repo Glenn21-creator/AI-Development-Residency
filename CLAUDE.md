@@ -1,19 +1,35 @@
 # Project rules for Claude
 
-When building or changing any software or user-facing interface in this
-project, always apply these skills and run their pre-delivery reviews before
-showing me the result:
+This project is Hyper Budget, an ADHD budgeting app. The skills in
+.claude/skills hold the rules for how to build it. Use the relevant ones for
+every task, and run any pre-delivery checks a skill lists before showing me the
+result. If a skill clearly does not relate to a task, you may skip it, but say
+which you skipped and why.
 
-- ux-best-practices
-- accessibility
-- security
+## Always check these
 
-If a task clearly doesn't relate to one of them, you may skip that one, but
-say which you skipped and why.
+- mvp-scope: before building any feature, confirm it is in scope and in the
+  right build order.
+- dev-workflow: for any coding task, build in small, tested steps.
+- testing: decide what to test first (money math and data safety).
 
-When carrying out any sort of market research or analysis, always apply this skill
-and run their pre-delivery reviews before showing my any result:
+## When the task touches the screen or any user-facing text
 
-- market-researcher
+- adhd-ux-guidelines: calm, kind, ADHD-friendly screens and copy.
+- mobile-accessibility: screen readers, large text, reduced motion, contrast.
+- ux-best-practices: general UX, light theme, clear errors.
+- accessibility: WCAG 2.2 AA and inclusive design.
+- reminders-and-notifications: when the task is a nudge, alert, or reminder.
 
-If a task clearly does not relate to that, you may skip and give a reason why you skipped
+## When the task touches money math
+
+- safe-to-spend-math: the safe-to-spend number, buckets, bills, savings.
+
+## When the task touches data, bank links, or security
+
+- open-banking-sandbox: bank linking and transactions (sandbox only).
+- local-data-and-sync: on-device storage, offline, syncing, duplicates.
+- device-security: app lock, biometrics, hiding balances.
+- secrets-and-api-keys: keys and tokens, never in code or git.
+- gdpr-privacy: consent, data export, deletion, data minimisation.
+- security: OWASP, encryption, authentication.
