@@ -26,8 +26,8 @@ stores a copy online. A few words you keep hearing:
 - **Pull request (PR):** a request to merge one branch into another on GitHub. It
   is the reviewed, recorded way to merge.
 - **Worktree:** an extra folder on your computer that is linked to the same repo
-  but checked out to a different branch. This matters for you, and Part 4 explains
-  why.
+  but checked out to a different branch. This matters for you, and Part 7 explains
+  it fully.
 
 ---
 
@@ -115,14 +115,63 @@ If you ever see these missing, that is fine. The tools recreate them.
 
 ---
 
-## Part 7: Where your files actually are on your computer
+## Part 7: What a worktree is, and how it works
 
-This is the one that can confuse. We have been working in a **worktree**, which
-is a second folder linked to your repo, living at:
+This is the one that confused you, and it is worth understanding, because it
+explains why new files did not show up in your usual folder.
+
+### The short version
+
+A worktree is an extra folder on your computer that belongs to the same repo but
+is checked out to a different branch. One repo, but more than one folder you can
+work in at the same time, each on its own branch.
+
+### A picture to hold onto
+
+Think of your repo as a project with one shared filing cabinet of history (that
+is the `.git` data). Normally you have one desk in front of that cabinet: your
+main project folder, showing the `main` branch.
+
+A worktree gives you a second desk in front of the same cabinet. On that second
+desk you lay out a different branch and work on it, without touching or disturbing
+what is on your first desk. Both desks pull from and file back into the same
+cabinet, so the history is shared, but each desk shows a different version of the
+work.
+
+### Why use one
+
+- You can work on a side branch in its own folder while your main folder stays on
+  `main`, clean and untouched.
+- You can have several branches open as real folders at once, instead of
+  constantly switching one folder back and forth between branches.
+- If the side work is thrown away, your main folder never saw it.
+
+### How it worked in this project
+
+The tool building your app made a worktree for the work and put it here:
 
 `.claude/worktrees/adhd-budget-app-setup-106074/`
 
-So the new files are on your computer, but inside that worktree folder, not in the
-main project folder you usually open. On top of that, your main folder only shows
-changes after you **pull** them down from GitHub. Part 1 of the chat message that
-came with this file explains exactly how to see everything in your normal folder.
+That folder was checked out to the branch `claude/adhd-budget-app-setup-106074`.
+Every file we created first appeared in that worktree folder, on that branch, not
+in your main project folder (which stays on `main`). That is normal and by design.
+
+### Why the files were not in your main folder
+
+Two separate things were going on:
+
+1. The files lived in the worktree folder, not the main folder you open.
+2. Even after the work was merged into `main` on GitHub, your main folder on your
+   computer had not downloaded that merge yet. A folder only updates when you
+   **pull**.
+
+So to see everything in your normal folder, you pull `main`:
+
+```
+cd "D:/Github_Repo/AI-Development-Residency"
+git pull
+```
+
+After that, your main folder matches GitHub and shows all the merged work. The
+worktree folder can be cleaned up later by the tool; you do not need to manage it
+yourself.
