@@ -39,11 +39,7 @@ export type ConnectedAccount = {
   currency: string;
 };
 
-function euros(cents: number) {
-  return "€" + Math.round(cents / 100).toLocaleString("en-IE");
-}
-
-function currency(cents: number, code: string) {
+function money(cents: number, code: string) {
   try {
     return new Intl.NumberFormat("en-GB", {
       style: "currency",
@@ -60,16 +56,19 @@ export default function HomeView({
   accounts,
   connected,
   bankStatus,
+  firstName,
+  displayCurrency,
 }: {
   data: HomeData;
   accounts: ConnectedAccount[];
   connected: boolean;
   bankStatus: string | null;
+  firstName: string | null;
+  displayCurrency: string;
 }) {
   const [hidden, setHidden] = useState(false);
-  const show = (cents: number) => (hidden ? "•••" : euros(cents));
-  const showCurrency = (cents: number, code: string) =>
-    hidden ? "•••" : currency(cents, code);
+  const show = (cents: number, code: string = displayCurrency) =>
+    hidden ? "•••" : money(cents, code);
 
   return (
     <Container maxWidth="sm">
@@ -80,7 +79,7 @@ export default function HomeView({
             sx={{ justifyContent: "space-between", alignItems: "center" }}
           >
             <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-              Welcome back
+              {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
             </Typography>
             <Button
               variant="text"
@@ -152,7 +151,7 @@ export default function HomeView({
                         </Typography>
                       </Box>
                       <Typography sx={{ fontWeight: 700 }}>
-                        {showCurrency(a.balance_cents, a.currency)}
+                        {show(a.balance_cents, a.currency)}
                       </Typography>
                     </Stack>
                   </CardContent>
