@@ -11,7 +11,9 @@ import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
+import Divider from "@mui/material/Divider";
 import { authenticate, type AuthState } from "./actions";
+import { createClient } from "@/lib/supabase/client";
 
 // The log in / create account screen. One screen that flips between the two
 // modes. Calm copy, one clear primary action, kind errors that keep what you
@@ -20,12 +22,24 @@ export default function LoginForm() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [googlePending, setGooglePending] = useState(false);
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     authenticate,
     {},
   );
 
   const isSignup = mode === "signup";
+
+  async function handleGoogle() {
+    setGooglePending(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    // On success the browser redirects to Google, so this line only runs on error.
+    if (error) setGooglePending(false);
+  }
 
   return (
     <Container maxWidth="sm">
@@ -52,6 +66,18 @@ export default function LoginForm() {
               ? "Let's get you set up. It only takes a moment."
               : "Let's get you in."}
           </Typography>
+
+          <Button
+            variant="outlined"
+            size="large"
+            fullWidth
+            onClick={handleGoogle}
+            disabled={googlePending}
+          >
+            {googlePending ? "Redirecting..." : "Continue with Google"}
+          </Button>
+
+          <Divider>or</Divider>
 
           {state.error && (
             <Alert severity="warning" variant="outlined">
