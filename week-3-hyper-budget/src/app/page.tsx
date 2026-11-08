@@ -33,7 +33,7 @@ export default function Home() {
             the app.
           </Typography>
 
-          <Button variant="contained" size="large">
+          <Button variant="contained" size="large" href="/login">
             Get started
           </Button>
         </Stack>
