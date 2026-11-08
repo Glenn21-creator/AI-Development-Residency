@@ -13,3 +13,5 @@ past decisions are respected rather than quietly undone.
 - [0007](0007-row-level-security-privacy-wall.md) Row-Level Security as the privacy wall
 - [0008](0008-open-banking-sandbox.md) Open-banking sandbox for bank data
 - [0009](0009-alerts-in-app-plus-push.md) Alerts as in-app plus push in the MVP
+- [0010](0010-cycle-based-allocation-and-spend-waterfall.md) Cycle-based allocation and the spend waterfall
+- [0011](0011-savings-cushion-cycle-locking.md) Savings cushion as append-only cycle locking

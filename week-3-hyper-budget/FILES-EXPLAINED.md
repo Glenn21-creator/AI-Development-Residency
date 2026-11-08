@@ -495,3 +495,111 @@ work the summary out from it.
 Both decisions come from the same idea: for money, keep the real, raw records and
 calculate the friendly number from them each time, rather than trusting a stored
 summary that could drift. Correct and trustworthy first, fast second.
+
+---
+
+## Part 14: How your money gets split each cycle (the allocation engine)
+
+This is the heart of the app, and we designed it together over a long back and
+forth. Here it is in plain words.
+
+### Virtual buckets: one real pot, labels on top
+
+The app never moves real money at the bank. Your money stays as one real pot. The
+app just lays **labels** over it: this much is food & rent, this much is bills, and
+so on. Dividing money this way, without any real transfer, is called **virtual
+buckets** (or virtual envelopes). It is how good budgeting apps work, and it is why
+a "savings bucket" is a plan, not a transfer.
+
+### Cycles: your budget resets with your pay
+
+Your budget runs in **cycles** the length of how often you are paid, which you set
+to weekly or monthly. Each cycle, the income that arrived is split into the buckets,
+and the buckets reset for the next cycle. A monthly earner's buckets reset monthly;
+a weekly earner's reset weekly.
+
+### The waterfall: the order money fills the buckets
+
+Each cycle's income fills the buckets in a fixed order, like water filling cups from
+top to bottom:
+
+1. Food & rent
+2. Bills
+3. Fun floor (a little guaranteed fun, if you set one)
+4. Savings
+5. Whatever is left over is your **safe-to-spend**
+
+### "Save what fits"
+
+If a cycle is lean and the money runs out before savings is full, savings simply
+takes **whatever is left** after the earlier buckets. No guessing, no percentage. A
+good month saves the full amount; a thin month saves less; a broke month saves
+nothing. Honest either way.
+
+### The fun floor is your choice
+
+The fun floor is a small amount of guilt-free fun you can guarantee yourself even in
+tight cycles. It defaults to 0 (off), because protecting savings first is the
+default. If you want it, you set it, and it is funded before savings. We made it
+*your* setting on purpose, because only you know if you need it.
+
+### Overspending: which buckets get eaten, and in what order
+
+If you spend more than your safe-to-spend, the extra has to come from somewhere
+(it is all one real pot). It eats the buckets in reverse order of importance:
+safe-to-spend (fun) first, then savings, then bills, and **food & rent is protected
+the very longest**. So overspending hurts your least important money first and your
+roof-and-food money last. Nothing is deleted; an overspend is written as a negative
+event, so the full history stays intact.
+
+### The savings cushion that grows
+
+At the end of each cycle, whatever savings survived is **locked** into your
+cumulative cushion, permanently. An empty cycle locks nothing. The cushion is the
+sum of all the locked cycles plus whatever this cycle has set aside so far. That is
+how the €5-a-week (or whatever you choose) slowly grows into a real cushion, while
+the app never pretends you saved money you actually spent.
+
+### Why safe-to-spend looked huge in testing
+
+When we first ran the engine on your real data, safe-to-spend showed thousands of
+euros, even though your account holds about €81. That is because this stage splits
+your **income** but does not yet subtract your **spending**. Most of that income was
+already spent during the month, which is why the real balance is small. The next
+stage (the overspend part) subtracts the spending, and then the number will match
+reality. Income in first, spending taken out second.
+
+---
+
+## Part 15: Two small snags we hit, in plain words
+
+Building the engine, two technical-looking errors came up. Neither meant anything
+was really wrong. Here is what each one was.
+
+### "function allocate_cycle(numeric, ...) does not exist"
+
+Our math function expected a **bigint** (a plain whole number) for the income. But
+when the database **adds up** a column of whole numbers with `sum()`, it hands back
+a slightly different number type called **numeric** (a careful decimal type). The
+function did not recognise "numeric" where it wanted "bigint", so it complained.
+
+The fix was one word: we told the database to turn the sum back into a bigint (a
+"cast", written `::bigint`). The math never changed; the two sides just had to agree
+on the number type. This is a common, harmless database gotcha.
+
+### The real-data query returned nothing
+
+When we ran the cycle function in Supabase's SQL Editor, it returned zero rows, even
+though the data was there. The reason: the function is built to show **only the
+logged-in person's** rows, and it finds out who that is by asking `auth.uid()`
+(short for "the current user's id"). But the SQL Editor runs as the database
+**admin**, where there is no logged-in app user, so `auth.uid()` is empty and the
+"only my rows" filter matches nothing.
+
+That empty result was actually the **privacy wall working correctly**. In the real
+app, your login tells the function who you are, so it returns your data there. To
+test it in the editor, we looked you up by your account on purpose, which stood in
+for the logged-in user, and then your real cycles appeared.
+
+The lesson worth keeping: an empty result in the SQL Editor often means "no logged-in
+user here", not "no data".
