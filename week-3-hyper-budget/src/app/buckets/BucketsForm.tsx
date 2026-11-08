@@ -1,18 +1,22 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import InputAdornment from "@mui/material/InputAdornment";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { saveBuckets, type BucketsState } from "./actions";
 
 export type BucketsInitial = {
   essentials: number;
   bills: number;
+  fun: number;
   savings: number;
+  payFrequency: "weekly" | "monthly";
 };
 
 function symbolFor(code: string): string {
@@ -42,10 +46,11 @@ export default function BucketsForm({
     saveBuckets,
     {},
   );
+  const [freq, setFreq] = useState<"weekly" | "monthly">(initial.payFrequency);
   const symbol = symbolFor(currencyCode);
 
   const amount = (
-    name: "essentials" | "bills" | "savings",
+    name: "essentials" | "bills" | "fun" | "savings",
     label: string,
     helper: string,
     value: number,
@@ -72,8 +77,8 @@ export default function BucketsForm({
     <form action={action}>
       <Stack spacing={2.5} sx={{ alignItems: "stretch" }}>
         <Typography variant="body1" color="text.secondary">
-          Set how much to protect each period. Whatever is left after these
-          becomes your safe-to-spend.
+          Set what to protect each pay cycle. Whatever is left after these becomes
+          your safe-to-spend.
         </Typography>
 
         {state.saved && (
@@ -86,6 +91,29 @@ export default function BucketsForm({
             {state.error}
           </Alert>
         )}
+
+        <Stack spacing={1}>
+          <Typography variant="subtitle2" component="label" id="pay-frequency-label">
+            How often are you paid?
+          </Typography>
+          <ToggleButtonGroup
+            value={freq}
+            exclusive
+            onChange={(_, v) => {
+              if (v) setFreq(v);
+            }}
+            aria-labelledby="pay-frequency-label"
+            fullWidth
+            color="primary"
+          >
+            <ToggleButton value="weekly">Weekly</ToggleButton>
+            <ToggleButton value="monthly">Monthly</ToggleButton>
+          </ToggleButtonGroup>
+          <input type="hidden" name="pay_frequency" value={freq} />
+          <Typography variant="caption" color="text.secondary">
+            Your buckets and savings reset each cycle.
+          </Typography>
+        </Stack>
 
         {amount(
           "essentials",
@@ -100,9 +128,15 @@ export default function BucketsForm({
           initial.bills,
         )}
         {amount(
+          "fun",
+          "Minimum fun money (optional)",
+          "A little guilt-free spending kept even in tight cycles. Leave at 0 for none.",
+          initial.fun,
+        )}
+        {amount(
           "savings",
           "Savings to set aside",
-          "Tucked away toward your cushion.",
+          "Tucked away toward your cushion. Saved only if the cycle can afford it.",
           initial.savings,
         )}
 
