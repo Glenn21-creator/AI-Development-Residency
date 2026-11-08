@@ -175,3 +175,121 @@ git pull
 After that, your main folder matches GitHub and shows all the merged work. The
 worktree folder can be cleaned up later by the tool; you do not need to manage it
 yourself.
+
+---
+
+## Part 8: Setting up Supabase and Google sign-in
+
+Before the login screen could work, two outside services had to be set up. Here is
+what each one is and what we did, in plain words.
+
+### Supabase (your database and login service)
+
+Supabase is an online service that does two jobs for the app: it stores your data,
+and it handles who is logged in. Think of it as the back room where the records are
+kept and the door is guarded.
+
+What we set up:
+
+1. Created a free Supabase project (the back room).
+2. Ran the migration (the one big SQL file) in Supabase's SQL Editor. That created
+   all the tables and switched on the privacy wall, so each person can only ever
+   see their own data.
+3. Copied two values from Supabase (Settings, then API) into a file on your
+   computer called `.env.local`:
+   - the Project URL (the back room's address), and
+   - the anon key (a public key that is safe to share, because the privacy wall
+     guards everything behind it).
+   These live in `.env.local` only, never in the code and never on GitHub.
+4. The app reads those two values to talk to Supabase.
+
+### Google sign-in (the "Continue with Google" button)
+
+This lets people sign in with their Google account instead of making a new
+password. Google checks who they are; we never see their Google password.
+
+Setting it up has two sides that talk to each other.
+
+On the Google side (Google Cloud):
+
+1. Created an "OAuth client," which is basically an ID card for our app so Google
+   recognises it.
+2. Told Google where to send people back after it checks them. That address is
+   Supabase's callback, which looks like
+   `https://yourref.supabase.co/auth/v1/callback`.
+3. Google gave us two values: a Client ID (public) and a Client Secret (private).
+
+On the Supabase side:
+
+4. Turned on the Google provider and pasted in that Client ID and Client Secret.
+   The Secret lives only here, inside Supabase, never in the code, never on GitHub,
+   never in chat.
+5. Set the Site URL and allowed the `http://localhost:3000` address, so the trip
+   back to our app is permitted.
+
+The whole flow in one sentence: you tap "Continue with Google," Google checks you
+on its own page, Google hands you back through Supabase to our app, and you are
+logged in. The only part we control is the button and what happens after you come
+back.
+
+---
+
+## Part 9: The errors we saw, in plain words
+
+While building the login screen, three technical-looking messages popped up. None
+meant the app was broken. Here is what each one actually means, without jargon.
+
+### "Hydration mismatch"
+
+First, what hydration is. When you open a page, it is built twice:
+
+1. The server sends a ready-made picture of the page so it shows up instantly.
+2. Then the code wakes that picture up in your browser so buttons and typing work.
+
+That second step, waking the page up, is called hydration. Think of a dried
+sponge: the server sends the flat dry sponge (fast), and the browser pours water
+on it to make it springy and usable.
+
+A "hydration mismatch" means the dry sponge the server sent and the one the
+browser expected did not match exactly, so the code complained.
+
+In our case, the mismatch was caused by a browser extension you have installed. It
+quietly edited the page before our code could wake it up, so the two no longer
+matched. It was not our code's fault.
+
+The fix: we told the code "it is fine if that one top element differs a little,"
+because we know the extension harmlessly tweaks it. That is what
+`suppressHydrationWarning` does.
+
+### "Date.now() while prerendering"
+
+"Prerendering" means building a page ahead of time, before anyone visits, so it is
+ready to show the instant someone arrives.
+
+There was an experimental, still-maturing feature switched on (called
+`cacheComponents`) that tried to build pages ahead of time and insisted that
+everything on them be fixed and predictable. But something on the page asked "what
+is the exact time right now?" (`Date.now()`), and the time changes every moment, so
+it is not fixed. The feature flagged that as a problem.
+
+The fix: we turned that experimental feature off. We do not need it for the app,
+and it was being overly strict and clashing with Material UI. With it off, the
+page builds normally.
+
+### "Changing an uncontrolled input to be controlled"
+
+A text box can work in one of two ways: either the code is the boss of what is in
+it ("controlled"), or the browser is the boss ("uncontrolled"). You should pick
+one and stick with it for a given box.
+
+This message said a box switched from one way to the other. In our case it was not
+a real problem at all: it only appeared because the page was reloading itself live
+while I was editing the code (a developer convenience called hot reload). On a
+normal, clean page load it does not happen.
+
+### The takeaway
+
+Two of these came from outside our control (a browser extension, and a live-reload
+quirk), and one came from an experimental setting we simply did not need. None of
+them meant the app was wrong. This is normal: a lot of "errors" while building are
+warnings about edge cases, not signs that something is broken.
