@@ -82,6 +82,10 @@ export default function HomeView({ data }: { data: HomeData }) {
             </CardContent>
           </Card>
 
+          <Button variant="outlined" href="/connect">
+            Connect your bank (sandbox)
+          </Button>
+
           <Typography variant="overline" color="text.secondary">
             Your money, sorted automatically
           </Typography>
