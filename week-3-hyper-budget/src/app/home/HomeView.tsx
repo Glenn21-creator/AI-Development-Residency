@@ -58,6 +58,7 @@ export default function HomeView({
   bankStatus,
   firstName,
   displayCurrency,
+  real,
 }: {
   data: HomeData;
   accounts: ConnectedAccount[];
@@ -65,6 +66,7 @@ export default function HomeView({
   bankStatus: string | null;
   firstName: string | null;
   displayCurrency: string;
+  real: boolean;
 }) {
   const [hidden, setHidden] = useState(false);
   const show = (cents: number, code: string = displayCurrency) =>
@@ -211,9 +213,11 @@ export default function HomeView({
           </Stack>
 
           <Typography variant="caption" color="text.secondary">
-            {connected
-              ? "Your bank is connected. The safe-to-spend number and jars above are still samples; your real figures come next."
-              : "These are sample numbers for now, until your real money is connected."}
+            {real
+              ? "These are your figures, from your connected accounts and the buckets you set."
+              : connected
+                ? "Your bank is connected. Set your buckets on the Buckets tab to see your real safe-to-spend. The numbers above are still samples."
+                : "These are sample numbers for now, until your real money is connected."}
           </Typography>
 
           <Divider />

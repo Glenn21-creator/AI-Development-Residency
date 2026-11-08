@@ -2,46 +2,16 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import HomeView, { type HomeData, type ConnectedAccount } from "./HomeView";
 
-// Sample data for the safe-to-spend card and jars. These stay as placeholders
-// until the allocation and safe-to-spend SQL is built. The connected accounts
-// below them are real, read from the database. Notes avoid a hardcoded currency
-// so they match whatever currency the real accounts use.
+// Fallback sample data, shown until the person has set buckets and the
+// safe-to-spend function exists. Notes avoid a hardcoded currency.
 const SAMPLE: HomeData = {
   safeToSpendCents: 6800,
   onTrack: true,
   buckets: [
-    {
-      key: "essentials",
-      name: "Food & rent",
-      note: "Set aside first, kept safe",
-      amountCents: 50000,
-      status: "Safe",
-      statusKind: "safe",
-    },
-    {
-      key: "bills",
-      name: "Bills",
-      note: "3 bills, all covered",
-      amountCents: 12000,
-      status: "Covered",
-      statusKind: "covered",
-    },
-    {
-      key: "savings",
-      name: "Savings cushion",
-      note: "Building quietly toward your cushion",
-      amountCents: 4000,
-      progress: { current: 4000, target: 30000 },
-    },
-    {
-      key: "fun",
-      name: "Fun money",
-      note: "Over halfway this week",
-      amountCents: 6800,
-      status: "Over halfway",
-      statusKind: "heads-up",
-      progress: { current: 11200, target: 18000 },
-    },
+    { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: 50000, status: "Safe", statusKind: "safe" },
+    { key: "bills", name: "Bills", note: "3 bills, all covered", amountCents: 12000, status: "Covered", statusKind: "covered" },
+    { key: "savings", name: "Savings cushion", note: "Building quietly toward your cushion", amountCents: 4000, progress: { current: 4000, target: 30000 } },
+    { key: "fun", name: "Fun money", note: "Over halfway this week", amountCents: 6800, status: "Over halfway", statusKind: "heads-up", progress: { current: 11200, target: 18000 } },
   ],
 };
 
@@ -69,23 +39,49 @@ export default async function HomePage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   const { data: accountsData } = await supabase
     .from("accounts")
     .select("id,name,type,balance_cents,currency")
     .eq("user_id", user.id)
     .order("name");
-
   const accounts = (accountsData ?? []) as ConnectedAccount[];
-  const firstName = firstNameFrom(user.user_metadata ?? {}, user.email ?? "");
 
-  // Display currency is the person's own preference, not the bank account's.
-  // It defaults to EUR until a profile currency is set. The sandbox accounts are
-  // fake GBP data, so we just label everything in the chosen currency (no
-  // real conversion; multi-currency is out of MVP scope).
+  const { data: bucketRows } = await supabase
+    .from("buckets")
+    .select("type,target_cents")
+    .eq("user_id", user.id);
+  const bucketCents = (type: string) =>
+    (bucketRows ?? []).find((b) => b.type === type)?.target_cents ?? 0;
+  const hasBuckets = (bucketRows ?? []).some((b) => (b.target_cents ?? 0) > 0);
+
+  // The safe-to-spend math itself runs in SQL (get_safe_to_spend). If the
+  // migration has not been applied yet, the call fails and we fall back to the
+  // sample data, so the page still works.
+  let safeCents: number | null = null;
+  const { data: rpcData, error: rpcErr } = await supabase.rpc("get_safe_to_spend");
+  if (!rpcErr) {
+    const n = typeof rpcData === "number" ? rpcData : Number(rpcData);
+    if (Number.isFinite(n)) safeCents = n;
+  }
+
+  const useReal = hasBuckets && accounts.length > 0 && safeCents !== null;
+
+  const data: HomeData = useReal
+    ? {
+        safeToSpendCents: safeCents as number,
+        onTrack: (safeCents as number) > 0,
+        buckets: [
+          { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: bucketCents("essentials"), status: "Safe", statusKind: "safe" },
+          { key: "bills", name: "Bills", note: "Held for upcoming bills", amountCents: bucketCents("bills"), status: "Covered", statusKind: "covered" },
+          { key: "savings", name: "Savings", note: "Tucked away toward your cushion", amountCents: bucketCents("savings") },
+          { key: "fun", name: "Fun money", note: "What's safe to spend right now", amountCents: safeCents as number },
+        ],
+      }
+    : SAMPLE;
+
+  const firstName = firstNameFrom(user.user_metadata ?? {}, user.email ?? "");
   const { data: profile } = await supabase
     .from("profiles")
     .select("currency")
@@ -95,12 +91,13 @@ export default async function HomePage({
 
   return (
     <HomeView
-      data={SAMPLE}
+      data={data}
       accounts={accounts}
       connected={accounts.length > 0}
       bankStatus={sp.bank ?? null}
       firstName={firstName}
       displayCurrency={displayCurrency}
+      real={useReal}
     />
   );
 }
