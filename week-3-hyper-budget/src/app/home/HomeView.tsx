@@ -11,6 +11,7 @@ import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Divider from "@mui/material/Divider";
+import Alert from "@mui/material/Alert";
 import BottomNav from "@/components/BottomNav";
 import { logout } from "./actions";
 
@@ -30,13 +31,46 @@ export type HomeData = {
   buckets: Bucket[];
 };
 
-function euros(cents: number) {
-  return "€" + Math.round(cents / 100).toLocaleString("en-IE");
+export type ConnectedAccount = {
+  id: string;
+  name: string;
+  type: string | null;
+  balance_cents: number;
+  currency: string;
+};
+
+function money(cents: number, code: string) {
+  try {
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency",
+      currency: code,
+      maximumFractionDigits: 0,
+    }).format(cents / 100);
+  } catch {
+    return `${Math.round(cents / 100)} ${code}`;
+  }
 }
 
-export default function HomeView({ data }: { data: HomeData }) {
+export default function HomeView({
+  data,
+  accounts,
+  connected,
+  bankStatus,
+  firstName,
+  displayCurrency,
+  real,
+}: {
+  data: HomeData;
+  accounts: ConnectedAccount[];
+  connected: boolean;
+  bankStatus: string | null;
+  firstName: string | null;
+  displayCurrency: string;
+  real: boolean;
+}) {
   const [hidden, setHidden] = useState(false);
-  const show = (cents: number) => (hidden ? "•••" : euros(cents));
+  const show = (cents: number, code: string = displayCurrency) =>
+    hidden ? "•••" : money(cents, code);
 
   return (
     <Container maxWidth="sm">
@@ -47,7 +81,7 @@ export default function HomeView({ data }: { data: HomeData }) {
             sx={{ justifyContent: "space-between", alignItems: "center" }}
           >
             <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-              Welcome back
+              {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
             </Typography>
             <Button
               variant="text"
@@ -57,6 +91,17 @@ export default function HomeView({ data }: { data: HomeData }) {
               {hidden ? "Show balances" : "Hide balances"}
             </Button>
           </Stack>
+
+          {bankStatus === "connected" && (
+            <Alert severity="success" variant="outlined">
+              Your bank is connected.
+            </Alert>
+          )}
+          {bankStatus === "error" && (
+            <Alert severity="warning" variant="outlined">
+              We could not finish connecting your bank. Please try again.
+            </Alert>
+          )}
 
           <Card variant="outlined" sx={{ bgcolor: "#E9F5EE", borderColor: "#CFE6DA" }}>
             <CardContent>
@@ -81,6 +126,41 @@ export default function HomeView({ data }: { data: HomeData }) {
               </Stack>
             </CardContent>
           </Card>
+
+          <Button variant="outlined" href="/connect">
+            {connected
+              ? "Reconnect your bank (sandbox)"
+              : "Connect your bank (sandbox)"}
+          </Button>
+
+          {connected && (
+            <Stack spacing={1.5}>
+              <Typography variant="overline" color="text.secondary">
+                Your connected accounts
+              </Typography>
+              {accounts.map((a) => (
+                <Card key={a.id} variant="outlined">
+                  <CardContent>
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      sx={{ justifyContent: "space-between", alignItems: "center" }}
+                    >
+                      <Box>
+                        <Typography sx={{ fontWeight: 700 }}>{a.name}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {(a.type ?? "account").toLowerCase()}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {show(a.balance_cents)}
+                      </Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
+          )}
 
           <Typography variant="overline" color="text.secondary">
             Your money, sorted automatically
@@ -133,7 +213,11 @@ export default function HomeView({ data }: { data: HomeData }) {
           </Stack>
 
           <Typography variant="caption" color="text.secondary">
-            These are sample numbers for now, until your real money is connected.
+            {real
+              ? "These are your figures, from your connected accounts and the buckets you set."
+              : connected
+                ? "Your bank is connected. Set your buckets on the Buckets tab to see your real safe-to-spend. The numbers above are still samples."
+                : "These are sample numbers for now, until your real money is connected."}
           </Typography>
 
           <Divider />
