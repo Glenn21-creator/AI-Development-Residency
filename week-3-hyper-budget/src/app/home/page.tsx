@@ -81,7 +81,17 @@ export default async function HomePage({
 
   const accounts = (accountsData ?? []) as ConnectedAccount[];
   const firstName = firstNameFrom(user.user_metadata ?? {}, user.email ?? "");
-  const displayCurrency = accounts[0]?.currency ?? "EUR";
+
+  // Display currency is the person's own preference, not the bank account's.
+  // It defaults to EUR until a profile currency is set. The sandbox accounts are
+  // fake GBP data, so we just label everything in the chosen currency (no
+  // real conversion; multi-currency is out of MVP scope).
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency")
+    .eq("id", user.id)
+    .maybeSingle();
+  const displayCurrency = profile?.currency ?? "EUR";
 
   return (
     <HomeView

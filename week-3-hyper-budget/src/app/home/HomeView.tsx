@@ -151,7 +151,7 @@ export default function HomeView({
                         </Typography>
                       </Box>
                       <Typography sx={{ fontWeight: 700 }}>
-                        {show(a.balance_cents, a.currency)}
+                        {show(a.balance_cents)}
                       </Typography>
                     </Stack>
                   </CardContent>
