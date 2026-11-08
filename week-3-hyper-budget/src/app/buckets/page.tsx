@@ -5,6 +5,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { createClient } from "@/lib/supabase/server";
 import BottomNav from "@/components/BottomNav";
+import BucketsForm, { type BucketsInitial } from "./BucketsForm";
 
 export default async function BucketsPage() {
   const supabase = await createClient();
@@ -13,17 +14,35 @@ export default async function BucketsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: buckets } = await supabase
+    .from("buckets")
+    .select("type,target_cents")
+    .eq("user_id", user.id);
+
+  const byType = new Map(
+    (buckets ?? []).map((b) => [b.type as string, (b.target_cents as number) ?? 0]),
+  );
+  const initial: BucketsInitial = {
+    essentials: byType.get("essentials") ?? 0,
+    bills: byType.get("bills") ?? 0,
+    savings: byType.get("savings") ?? 0,
+  };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency")
+    .eq("id", user.id)
+    .maybeSingle();
+  const currencyCode = profile?.currency ?? "EUR";
+
   return (
     <Container maxWidth="sm">
       <Box sx={{ py: 4, pb: 12 }}>
-        <Stack spacing={1}>
+        <Stack spacing={2}>
           <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-            Buckets
+            Your buckets
           </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Coming soon. This is where you&apos;ll see where your money went and
-            what&apos;s due and covered.
-          </Typography>
+          <BucketsForm initial={initial} currencyCode={currencyCode} />
         </Stack>
       </Box>
       <BottomNav />
