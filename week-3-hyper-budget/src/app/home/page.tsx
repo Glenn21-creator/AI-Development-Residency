@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import HomeView, { type HomeData } from "./HomeView";
+import HomeView, { type HomeData, type ConnectedAccount } from "./HomeView";
 
-// Sample data for now. These numbers are placeholders until the real money
-// layer (bank sync, allocation, the safe-to-spend SQL) is built. The figures
-// mirror the prototype so the screen reads realistically.
+// Sample data for the safe-to-spend card and jars. These stay as placeholders
+// until the allocation and safe-to-spend SQL is built. The connected accounts
+// below them are real, read from the database.
 const SAMPLE: HomeData = {
   safeToSpendCents: 6800,
   onTrack: true,
@@ -44,15 +44,35 @@ const SAMPLE: HomeData = {
   ],
 };
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bank?: string }>;
+}) {
+  const sp = await searchParams;
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) {
     redirect("/login");
   }
 
-  return <HomeView data={SAMPLE} />;
+  const { data: accountsData } = await supabase
+    .from("accounts")
+    .select("id,name,type,balance_cents,currency")
+    .eq("user_id", user.id)
+    .order("name");
+
+  const accounts = (accountsData ?? []) as ConnectedAccount[];
+
+  return (
+    <HomeView
+      data={SAMPLE}
+      accounts={accounts}
+      connected={accounts.length > 0}
+      bankStatus={sp.bank ?? null}
+    />
+  );
 }
