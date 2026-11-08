@@ -293,3 +293,205 @@ Two of these came from outside our control (a browser extension, and a live-relo
 quirk), and one came from an experimental setting we simply did not need. None of
 them meant the app was wrong. This is normal: a lot of "errors" while building are
 warnings about edge cases, not signs that something is broken.
+
+---
+
+## Part 10: How your bank data got into the database
+
+When you looked at the `accounts` table in Supabase, it already had rows in it (the
+fake accounts, with balances like 1800 and 2700, which are 18 and 27 pounds in
+whole pence). You asked three good questions about that. Here they are, answered.
+
+### Why were the rows already filled in?
+
+Those rows are the fake accounts from the TrueLayer sandbox (the mock bank you
+logged into with john and doe). When you tapped "Connect your bank" and finished
+the login, our code fetched those accounts and wrote them into the table for you.
+
+The column `is_manual` says FALSE on every row. That is the proof of where they
+came from: FALSE means "this account arrived from a bank sync," not typed by hand.
+If you ever added an account manually, that column would say TRUE instead.
+
+### Is Supabase connected to TrueLayer?
+
+No, and that is on purpose. Supabase and TrueLayer never talk to each other
+directly. Your Next.js server sits in the middle and is the only thing that talks
+to both. The path is:
+
+```
+Your browser
+   -> Next.js server (our code)
+        -> TrueLayer   (asks: "give me this person's accounts")
+        -> Supabase    (says: "save these accounts")
+```
+
+TrueLayer hands the data to our server, and our server hands it to Supabase. This
+is the "bank glue" decision written into the ADRs: the server is the trusted middle
+layer, so the bank token never touches the browser or the database.
+
+### Why do you not see any SQL for those rows?
+
+Because those rows were not created by SQL you wrote. They were created by a line
+of code in `src/app/callback/route.ts` that looks like this:
+
+```ts
+await supabase.from("accounts").insert({ ...the account... });
+```
+
+The Supabase library quietly turns that `insert` into a database write for you
+behind the scenes, so there is no hand-written `INSERT INTO accounts ...` anywhere
+in the project.
+
+The only hand-written SQL in Hyper Budget lives in the migration files in
+`supabase/migrations/`: one creates the tables and the privacy rules, another
+creates the safe-to-spend function. Those run once to build the structure. After
+that, the everyday data (accounts, transactions, buckets) all flows in through
+`.insert()` and `.select()` calls in the app, never as SQL you type. That split is
+normal and healthy: you write SQL for the shape of the database, and the app code
+fills it with data.
+
+### Why does the currency say GBP when home shows euros?
+
+The sandbox bank reports pounds (GBP), and we store the value exactly as the bank
+gave it. The euro symbol on the home screen is only a display choice, since these
+are fake test amounts we are not really converting. When a real European bank is
+added later, the place to do proper currency conversion is that same callback file,
+where the data comes in.
+
+---
+
+## Part 11: Where code lives versus where it runs
+
+You asked whether "the TypeScript is stored in the Next.js server." That mixes two
+different ideas that are worth keeping apart: where the code lives (stored), and
+where it runs.
+
+### TypeScript is a language, not a place
+
+TypeScript is just the language the code is written in. The files
+(`callback/route.ts`, `home/page.tsx`, and so on) are documents written in that
+language. They are stored in your project folder on your computer, and a copy is
+stored on GitHub. They are not sitting "inside" a server somewhere.
+
+### Next.js decides where each file runs
+
+When the app runs, Next.js runs each file in one of two places:
+
+- On the server (a computer running your app). Route handlers like
+  `callback/route.ts` and the server pages run here. This code never reaches the
+  user's browser, which is why it can safely hold the TrueLayer secret and talk to
+  the bank.
+- In the browser (on the person's phone or laptop). Files that start with
+  `"use client"`, like `HomeView.tsx`, run here, so the person can tap buttons and
+  watch things change.
+
+So the accurate way to say it is: the bank code runs on the Next.js server, but it
+is stored as TypeScript files in your project.
+
+### What is "the server" right now?
+
+A server is just a computer running your app. Right now the server is your own
+computer, because `npm run dev` runs the app at `localhost:3000`. There is no
+mystery machine involved yet. When we deploy to Vercel, the server becomes Vercel's
+computer: the same files get uploaded there, and the server-side parts run on
+Vercel instead of your laptop. That is the whole point of deploying, moving the
+"runs on the server" part onto a computer that is always on, so other people can
+reach it.
+
+### One last detail
+
+The browser and the server both actually run JavaScript, not TypeScript. Before
+your code runs, a build step quietly translates your TypeScript into JavaScript. You
+write TypeScript because it catches mistakes early; the machine runs the JavaScript
+version. This happens automatically, so you never do it by hand.
+
+In one line: you write and store TypeScript files; Next.js runs some of them on the
+server and some in the browser; and the server is your laptop today, Vercel after
+we deploy.
+
+---
+
+## Part 12: How the safe-to-spend number is worked out
+
+Safe-to-spend is the heart of the app: the one honest number that says "this is
+what is actually yours to spend right now." Here is the rule, in plain words.
+
+### The formula
+
+```
+safe to spend = spendable balance - money you set aside, never below zero
+```
+
+- Spendable balance = the total in your everyday (transaction) accounts. Savings
+  accounts are left out on purpose, because that money is not meant for spending.
+- Money you set aside = your buckets added up (food and rent, bills, savings).
+- Never below zero = if your set-aside is bigger than your balance, the number
+  stops at zero instead of showing a scary minus figure.
+
+That last rule is deliberate and kind. The app never tells someone they are "minus
+369 euros to spend," because that is exactly the shame moment that makes people with
+ADHD quit a budgeting app. It shows zero and keeps the essentials marked safe.
+
+### How we checked it was right
+
+Because this is money, we did not just trust it. We tested it both ways with the
+sandbox data, where the spendable accounts total about 81 euros:
+
+- Big buckets (450 euros set aside): the result correctly showed 0, because the
+  set-aside was larger than the balance.
+- Small buckets (65 euros set aside): the result correctly showed 16, because
+  81 minus 65 is 16.
+
+Both matched the formula by hand, so we know the calculation is trustworthy.
+
+### Where this calculation lives
+
+We chose to do this math in the database, in SQL, rather than in the app code. The
+function is called `get_safe_to_spend` and it lives in a migration file. The app
+just asks the database "what is the safe-to-spend?" and shows the answer. Part 13
+explains why we chose that.
+
+---
+
+## Part 13: The two big "how" decisions behind the number
+
+These are the decisions you made yourself after we talked through the trade-offs.
+They are recorded formally in the ADRs, but here they are in plain words, because
+they were real learning moments.
+
+### Compute-on-read versus a cached value
+
+There are two ways to show a number like safe-to-spend:
+
+- Cached: work the number out once, save it, and show the saved copy. Fast, but
+  risky. If a transaction is ever missed, or counted twice, the saved number
+  quietly drifts away from the truth and nobody notices.
+- Compute-on-read: work the number out fresh from the raw accounts and buckets
+  every time the page loads. A tiny bit more work for the computer, but the number
+  is always correct, because it is rebuilt from the real data each time.
+
+You chose compute-on-read, for the reason you put very well yourself: with a cached
+value the system keeps trusting a saved number that might already be wrong, while
+computing on read always rechecks against reality. For a money app, being correct
+beats being a few milliseconds faster.
+
+### Append-only allocation (never rewrite history)
+
+When money is split into buckets, there are two ways to record it:
+
+- Overwrite: keep one running figure per bucket and change it in place. Simpler,
+  but you lose the story of how it got there, and a repeated tap can double-count.
+- Append-only: write down each allocation as its own event and never edit or delete
+  the old ones. The current total is worked out by adding the events up. Nothing is
+  ever rewritten.
+
+You chose append-only. It means the history is always honest: you can see every
+move, a mistake can be traced, and an accidental repeat does not silently corrupt
+the total. It fits the same principle as compute-on-read: keep the raw truth, and
+work the summary out from it.
+
+### The one-line takeaway
+
+Both decisions come from the same idea: for money, keep the real, raw records and
+calculate the friendly number from them each time, rather than trusting a stored
+summary that could drift. Correct and trustworthy first, fast second.
