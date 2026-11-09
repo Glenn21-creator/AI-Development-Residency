@@ -364,7 +364,7 @@ export default function HomeView({
             >
               <ListItemText
                 primary="Clear my data (testing)"
-                secondary="Start fresh. Keeps your settings."
+                secondary="Clears history, keeps your bank connected."
                 slotProps={{ secondary: { sx: { fontSize: 12 } } }}
               />
             </ListItemButton>
@@ -487,9 +487,10 @@ export default function HomeView({
           <DialogTitle>Clear your data?</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              This is a testing tool. It permanently removes your transactions,
-              connected accounts, and savings cushion so you can start fresh. Your
-              buckets, pay frequency, and savings goal stay. This cannot be undone.
+              This is a testing tool. It clears all your transaction history (the ones
+              synced from the sandbox and the ones you logged) and resets your savings
+              cushion, so you can start fresh. Your bank stays connected, and your
+              buckets and settings stay. This cannot be undone.
             </DialogContentText>
             {clearState.error && (
               <Alert severity="warning" variant="outlined" sx={{ mt: 2 }}>

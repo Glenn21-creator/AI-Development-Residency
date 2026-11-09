@@ -34,15 +34,15 @@ export type ClearState = {
   at?: number;
 };
 
-// Clear my data (testing). Wipes the person's transactions, accounts, bank
-// connection, and savings cushion so the engine can be tested from a clean slate.
-// Their own settings (buckets, pay frequency, savings goal) stay. The actual
-// deletes happen in the clear_my_data SQL function, which is scoped to the signed-in
-// user, so a person can only ever clear their own data.
+// Clear my data (testing). Cleans all transaction history (sandbox-synced and
+// hand-logged) and resets the savings cushion, but KEEPS the bank connected, so the
+// sandbox does not re-import and the person stays on Home. Their settings (buckets,
+// pay frequency, savings goal) stay. The deletes happen in the clear_my_data SQL
+// function, scoped to the signed-in user, so a person can only clear their own data.
 //
 // It returns the real error if the delete fails (for example if the migration has
 // not been run yet), instead of silently pretending it worked. On success the client
-// refreshes Home, which sees no accounts and sends them to the connect page.
+// refreshes Home, which now shows a clean, empty cycle with the bank still linked.
 export async function clearMyData(
   _prev: ClearState,
   _formData: FormData,

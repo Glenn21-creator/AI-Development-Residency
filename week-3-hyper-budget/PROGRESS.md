@@ -115,13 +115,17 @@ Each one, in plain English: what was wrong, how we fixed it, and what changed.
 
 13. **No easy way to start a test over.** Clearing test data meant running SQL by
     hand each time. Fix: a **Clear my data (testing)** item in the menu pane (behind a
-    confirmation) that wipes your transactions, accounts, bank connection, and savings
-    cushion, while keeping your settings (buckets, pay frequency, savings goal). It
-    runs a `clear_my_data` SQL function that is scoped to the signed-in user, so a
-    person can only ever clear their own data. Changes: new migration
-    `20261109200000_clear_my_data.sql`, a `clearMyData` server action, and the pane
-    item with a confirm dialog. (Run the new migration in Supabase once before using
-    the button.)
+    confirmation) that cleans all your transaction history and resets the savings
+    cushion, while **keeping your bank connected** and keeping your settings (buckets,
+    pay frequency, savings goal). Keeping the connection matters: the TrueLayer sandbox
+    re-imports the same mock transactions on every reconnect, so a wipe-and-reconnect
+    could never give a clean slate. It runs a `clear_my_data` SQL function scoped to
+    the signed-in user, so a person can only ever clear their own data; it also returns
+    the real error if it fails (for example a missing migration) instead of silently
+    doing nothing. Changes: migrations `20261109200000_clear_my_data.sql` then
+    `20261109210000_clear_history_keep_connection.sql` (the keep-connected revision), a
+    `clearMyData` server action, and the pane item with a confirm dialog. (Run the
+    latest migration in Supabase once before using the button.)
 
 Deploy and login fixes from the same day are recorded just above.
 
