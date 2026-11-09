@@ -28,26 +28,42 @@ export async function disconnectBank() {
   revalidatePath("/alerts");
 }
 
+export type ClearState = {
+  ok?: boolean;
+  error?: string;
+  at?: number;
+};
+
 // Clear my data (testing). Wipes the person's transactions, accounts, bank
 // connection, and savings cushion so the engine can be tested from a clean slate.
 // Their own settings (buckets, pay frequency, savings goal) stay. The actual
 // deletes happen in the clear_my_data SQL function, which is scoped to the signed-in
-// user, so a person can only ever clear their own data. With no accounts left, Home
-// sends them back to the connect page.
-export async function clearMyData() {
+// user, so a person can only ever clear their own data.
+//
+// It returns the real error if the delete fails (for example if the migration has
+// not been run yet), instead of silently pretending it worked. On success the client
+// refreshes Home, which sees no accounts and sends them to the connect page.
+export async function clearMyData(
+  _prev: ClearState,
+  _formData: FormData,
+): Promise<ClearState> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) return { error: "Please log in again." };
 
-  await supabase.rpc("clear_my_data");
+  const { error } = await supabase.rpc("clear_my_data");
+  if (error) {
+    // Surface the database message so a missing migration is obvious.
+    return { error: `Could not clear your data: ${error.message}` };
+  }
 
   revalidatePath("/home");
   revalidatePath("/savings");
   revalidatePath("/alerts");
   revalidatePath("/activity");
-  redirect("/start");
+  return { ok: true, at: Date.now() };
 }
 
 export type SpendState = {

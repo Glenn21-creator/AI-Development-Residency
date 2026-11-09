@@ -34,6 +34,7 @@ import {
   logIncome,
   clearMyData,
   type SpendState,
+  type ClearState,
 } from "./actions";
 
 export type Bucket = {
@@ -122,6 +123,10 @@ export default function HomeView({
     logIncome,
     {},
   );
+  const [clearState, clearAction, clearPending] = useActionState<ClearState, FormData>(
+    clearMyData,
+    {},
+  );
   const show = (cents: number, code: string = displayCurrency) =>
     hidden ? "•••" : money(cents, code);
 
@@ -145,6 +150,17 @@ export default function HomeView({
       router.refresh();
     }
   }, [incomeState.at, incomeState.ok, incomeState.loggedCents, displayCurrency, router]);
+
+  // On a successful clear, close the dialog and refresh. Home then sees no accounts
+  // and sends them to the connect page. On failure the dialog stays open and shows
+  // the reason (see the clear dialog below).
+  useEffect(() => {
+    if (clearState.at && clearState.ok) {
+      setClearOpen(false);
+      setSnack("Your data was cleared. Starting fresh.");
+      router.refresh();
+    }
+  }, [clearState.at, clearState.ok, router]);
 
   return (
     <Container maxWidth="sm">
@@ -467,22 +483,29 @@ export default function HomeView({
       </Dialog>
 
       <Dialog open={clearOpen} onClose={() => setClearOpen(false)}>
-        <DialogTitle>Clear your data?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            This is a testing tool. It permanently removes your transactions,
-            connected accounts, and savings cushion so you can start fresh. Your
-            buckets, pay frequency, and savings goal stay. This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setClearOpen(false)}>Keep my data</Button>
-          <form action={clearMyData}>
-            <Button type="submit" color="warning" onClick={() => setClearOpen(false)}>
-              Clear it
+        <form action={clearAction}>
+          <DialogTitle>Clear your data?</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              This is a testing tool. It permanently removes your transactions,
+              connected accounts, and savings cushion so you can start fresh. Your
+              buckets, pay frequency, and savings goal stay. This cannot be undone.
+            </DialogContentText>
+            {clearState.error && (
+              <Alert severity="warning" variant="outlined" sx={{ mt: 2 }}>
+                {clearState.error}
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button type="button" onClick={() => setClearOpen(false)}>
+              Keep my data
             </Button>
-          </form>
-        </DialogActions>
+            <Button type="submit" color="warning" disabled={clearPending}>
+              {clearPending ? "Clearing..." : "Clear it"}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       <Snackbar
