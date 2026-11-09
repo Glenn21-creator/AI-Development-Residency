@@ -27,3 +27,76 @@ export async function disconnectBank() {
   revalidatePath("/savings");
   revalidatePath("/alerts");
 }
+
+export type SpendState = {
+  ok?: boolean;
+  error?: string;
+  loggedCents?: number;
+  bucket?: string;
+  at?: number; // changes each success, so the UI can react to repeated logs
+};
+
+// Log a spend by hand. It records a money-out transaction dated now, so it lands in
+// the current cycle and safe-to-spend updates immediately. Category is left blank,
+// so the bucket mapping treats it as discretionary (fun), which is what a quick
+// "I just spent this" is. Attached to the person's first account if they have one.
+export async function logSpend(
+  _prev: SpendState,
+  formData: FormData,
+): Promise<SpendState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please log in again." };
+
+  const amount = Number(String(formData.get("amount") ?? "").replace(",", "."));
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { error: "Please enter an amount greater than zero." };
+  }
+  const note = String(formData.get("note") ?? "").trim() || null;
+  const cents = Math.round(amount * 100);
+
+  // The dialog offers a fixed set of buckets (no free text). Map the choice to a
+  // bank label the engine already recognises, so the spend lands in the right
+  // bucket. "fun" is left blank, which the mapping treats as discretionary.
+  const bucket = String(formData.get("bucket") ?? "fun");
+  const categoryForBucket: Record<string, string | null> = {
+    essentials: "rent",
+    bills: "bill_payment",
+    fun: null,
+  };
+  const category = bucket in categoryForBucket ? categoryForBucket[bucket] : null;
+
+  const { data: acct } = await supabase
+    .from("accounts")
+    .select("id,currency")
+    .eq("user_id", user.id)
+    .order("name")
+    .limit(1)
+    .maybeSingle();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency")
+    .eq("id", user.id)
+    .maybeSingle();
+  const currency = acct?.currency ?? profile?.currency ?? "EUR";
+
+  const { error } = await supabase.from("transactions").insert({
+    user_id: user.id,
+    account_id: acct?.id ?? null,
+    amount_cents: -cents, // money out
+    currency,
+    description: note,
+    category, // chosen bucket, mapped to a recognised label (blank = fun)
+    occurred_at: new Date().toISOString(),
+    status: "settled",
+    source: "manual",
+  });
+  if (error) return { error: "Could not log the spend. Please try again." };
+
+  revalidatePath("/home");
+  revalidatePath("/savings");
+  revalidatePath("/alerts");
+  return { ok: true, loggedCents: cents, bucket, at: Date.now() };
+}
