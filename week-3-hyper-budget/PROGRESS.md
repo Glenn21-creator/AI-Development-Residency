@@ -10,17 +10,20 @@ Last updated: 2026-11-09
 ## Where it stands right now
 
 - **Stage 1 (per-cycle funding waterfall): complete and verified.**
-- **Stage 2 (overspend cascade): the cascade function (`apply_spending`) is built
-  and verified.** Still to do: wire it to each cycle's real spending so safe-to-spend
-  subtracts spending (right now it is still the gross income-minus-buckets figure).
+- **Stage 2 (overspend cascade): the cascade function (`apply_spending`) and the
+  label-to-bucket mapping (`label_buckets`) are built.** Still to do: the
+  reconciliation logic (each bucket absorbs its own spending, attributed by the
+  bank's label, with over-budget spending cascading) and wiring it per cycle, so
+  safe-to-spend subtracts spending.
 - The interim Savings tab (real-balance version) is committed but will be replaced
   by the ledger cushion in Stage 3.
 - The allocation-engine commits are on the branch, **not merged to main**. The
   local `main` folder is behind until you `git pull`.
 - Nothing is in flight; nothing is broken.
 
-**Next:** wire `apply_spending` to each cycle's real spending so safe-to-spend
-reflects reality.
+**Next:** build the reconciliation logic (attribute each cycle's spending to buckets
+by the bank's label, over-budget cascades) and wire it in so safe-to-spend reflects
+reality.
 
 ---
 
@@ -28,8 +31,9 @@ reflects reality.
 
 - [x] **Stage 1 - per-cycle funding waterfall.** Split a cycle's income across the
   buckets. Done.
-- [~] **Stage 2 - overspend cascade.** `apply_spending` built and verified; wiring
-  to each cycle's real spending is next.
+- [~] **Stage 2 - overspend cascade.** `apply_spending` and `label_buckets` built;
+  reconciliation (attribute spending by the bank's label, over-budget cascades) and
+  wiring next.
 - [ ] **Stage 3 - cycle-end locking + cumulative cushion.** Lock surviving savings
   per cycle (append-only, compute-on-open); cushion grows.
 - [ ] **Stage 4 - the screens.** Savings cushion view, Home, Buckets settings;
@@ -55,10 +59,11 @@ are tested with simulated multi-cycle data.
 - `d5bfd60` - ADR 0010 and 0011, plus FILES-EXPLAINED Parts 14 and 15.
 - `50b0d12` - PROGRESS.md, this living build log.
 - `7be9f52` - `apply_spending`: the overspend cascade function (Stage 2).
+- `6d25ffa` - `label_buckets`: map bank spending labels to buckets (synonyms, EN + DE).
 
 ### Supabase migrations run (in the database)
 - `safe_to_spend`, then `allocate_cycle`, `pay_frequency`, `cycle_allocations`,
-  `apply_spending`.
+  `apply_spending`, `label_buckets`.
 - All confirmed by test queries.
 
 ### Verified
@@ -76,6 +81,9 @@ are tested with simulated multi-cycle data.
   food & rent -> bills -> fun floor -> savings -> safe-to-spend.
 - "Save what fits" for partial savings cycles.
 - Overspend cascade: fun -> savings -> bills -> food & rent protected longest.
+- Spending attributed to buckets by the bank's own label (data-driven alias table,
+  synonyms + languages, unknown labels default to fun). Amends ADR 0010; the ADR
+  update is pending until the reconciliation logic is built.
 - Fun floor as a user setting (default 0).
 - Savings cushion via append-only cycle locking (compute-on-open).
 - Regular-income assumption recorded as a deliberate scope choice.
