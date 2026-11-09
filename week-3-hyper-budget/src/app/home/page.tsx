@@ -56,14 +56,19 @@ export default async function HomePage({
     (bucketRows ?? []).find((b) => b.type === type)?.target_cents ?? 0;
   const hasBuckets = (bucketRows ?? []).some((b) => (b.target_cents ?? 0) > 0);
 
-  // The safe-to-spend math itself runs in SQL (get_safe_to_spend). If the
-  // migration has not been applied yet, the call fails and we fall back to the
-  // sample data, so the page still works.
+  // The real safe-to-spend for the current cycle, after this cycle's spending, runs
+  // in SQL (cycle_summary via current_cycle_summary). If the migrations are not
+  // applied yet, or nothing has happened this cycle, we fall back to the sample data
+  // so the page still works.
   let safeCents: number | null = null;
-  const { data: rpcData, error: rpcErr } = await supabase.rpc("get_safe_to_spend");
-  if (!rpcErr) {
-    const n = typeof rpcData === "number" ? rpcData : Number(rpcData);
-    if (Number.isFinite(n)) safeCents = n;
+  let overspentCents = 0;
+  const { data: cycleRows, error: cycleErr } = await supabase.rpc("current_cycle_summary");
+  if (!cycleErr && Array.isArray(cycleRows) && cycleRows.length > 0) {
+    const row = cycleRows[0] as { safe_to_spend: number | string; amount_overspent: number | string };
+    const s = typeof row.safe_to_spend === "number" ? row.safe_to_spend : Number(row.safe_to_spend);
+    const o = typeof row.amount_overspent === "number" ? row.amount_overspent : Number(row.amount_overspent);
+    if (Number.isFinite(s)) safeCents = s;
+    if (Number.isFinite(o)) overspentCents = o;
   }
 
   const useReal = hasBuckets && accounts.length > 0 && safeCents !== null;
@@ -71,7 +76,8 @@ export default async function HomePage({
   const data: HomeData = useReal
     ? {
         safeToSpendCents: safeCents as number,
-        onTrack: (safeCents as number) > 0,
+        onTrack: (safeCents as number) > 0 && overspentCents === 0,
+        amountOverspentCents: overspentCents,
         buckets: [
           { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: bucketCents("essentials"), status: "Safe", statusKind: "safe" },
           { key: "bills", name: "Bills", note: "Held for upcoming bills", amountCents: bucketCents("bills"), status: "Covered", statusKind: "covered" },

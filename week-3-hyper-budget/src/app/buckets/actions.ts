@@ -12,8 +12,10 @@ function toCents(value: FormDataEntryValue | null): number {
   return Math.round(n * 100);
 }
 
-// Save the three buckets. We replace the person's buckets each time (delete then
-// insert) so saving is idempotent and there are never duplicates.
+// Save the buckets and the pay frequency. We replace the person's buckets each
+// time (delete then insert) so saving is idempotent and there are never
+// duplicates. The fun floor is just another bucket (type 'fun'). Pay frequency
+// lives on the profile.
 export async function saveBuckets(
   _prev: BucketsState,
   formData: FormData,
@@ -26,17 +28,28 @@ export async function saveBuckets(
 
   const essentials = toCents(formData.get("essentials"));
   const bills = toCents(formData.get("bills"));
+  const fun = toCents(formData.get("fun"));
   const savings = toCents(formData.get("savings"));
+  const freq = formData.get("pay_frequency") === "weekly" ? "weekly" : "monthly";
 
   await supabase.from("buckets").delete().eq("user_id", user.id);
   const { error } = await supabase.from("buckets").insert([
     { user_id: user.id, type: "essentials", name: "Food & rent", target_cents: essentials },
     { user_id: user.id, type: "bills", name: "Bills", target_cents: bills },
+    { user_id: user.id, type: "fun", name: "Fun money", target_cents: fun },
     { user_id: user.id, type: "savings", name: "Savings", target_cents: savings },
   ]);
   if (error) return { error: "Could not save your buckets. Please try again." };
 
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .upsert({ id: user.id, pay_frequency: freq }, { onConflict: "id" });
+  if (profileError) {
+    return { error: "Saved your buckets, but could not save your pay frequency. Please try again." };
+  }
+
   revalidatePath("/home");
   revalidatePath("/buckets");
+  revalidatePath("/savings");
   return { saved: true };
 }

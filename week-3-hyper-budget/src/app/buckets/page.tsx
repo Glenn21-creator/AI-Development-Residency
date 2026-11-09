@@ -22,18 +22,21 @@ export default async function BucketsPage() {
   const byType = new Map(
     (buckets ?? []).map((b) => [b.type as string, (b.target_cents as number) ?? 0]),
   );
-  const initial: BucketsInitial = {
-    essentials: byType.get("essentials") ?? 0,
-    bills: byType.get("bills") ?? 0,
-    savings: byType.get("savings") ?? 0,
-  };
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("currency")
+    .select("currency,pay_frequency")
     .eq("id", user.id)
     .maybeSingle();
   const currencyCode = profile?.currency ?? "EUR";
+
+  const initial: BucketsInitial = {
+    essentials: byType.get("essentials") ?? 0,
+    bills: byType.get("bills") ?? 0,
+    fun: byType.get("fun") ?? 0,
+    savings: byType.get("savings") ?? 0,
+    payFrequency: profile?.pay_frequency === "weekly" ? "weekly" : "monthly",
+  };
 
   return (
     <Container maxWidth="sm">
