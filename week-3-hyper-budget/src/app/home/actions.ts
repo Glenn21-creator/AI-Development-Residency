@@ -100,3 +100,56 @@ export async function logSpend(
   revalidatePath("/alerts");
   return { ok: true, loggedCents: cents, bucket, at: Date.now() };
 }
+
+// Log income by hand (money in). Useful for testing the math without the bank, and
+// for cash income the bank did not sync. Records a positive transaction dated now,
+// so it lands in the current cycle and safe-to-spend goes up.
+export async function logIncome(
+  _prev: SpendState,
+  formData: FormData,
+): Promise<SpendState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please log in again." };
+
+  const amount = Number(String(formData.get("amount") ?? "").replace(",", "."));
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { error: "Please enter an amount greater than zero." };
+  }
+  const note = String(formData.get("note") ?? "").trim() || null;
+  const cents = Math.round(amount * 100);
+
+  const { data: acct } = await supabase
+    .from("accounts")
+    .select("id,currency")
+    .eq("user_id", user.id)
+    .order("name")
+    .limit(1)
+    .maybeSingle();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("currency")
+    .eq("id", user.id)
+    .maybeSingle();
+  const currency = acct?.currency ?? profile?.currency ?? "EUR";
+
+  const { error } = await supabase.from("transactions").insert({
+    user_id: user.id,
+    account_id: acct?.id ?? null,
+    amount_cents: cents, // money in (positive)
+    currency,
+    description: note,
+    category: "credit",
+    occurred_at: new Date().toISOString(),
+    status: "settled",
+    source: "manual",
+  });
+  if (error) return { error: "Could not log the income. Please try again." };
+
+  revalidatePath("/home");
+  revalidatePath("/savings");
+  revalidatePath("/alerts");
+  return { ok: true, loggedCents: cents, bucket: "income", at: Date.now() };
+}

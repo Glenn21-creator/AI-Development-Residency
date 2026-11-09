@@ -10,6 +10,11 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Snackbar from "@mui/material/Snackbar";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
@@ -22,7 +27,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import BottomNav from "@/components/BottomNav";
-import { logout, disconnectBank, logSpend, type SpendState } from "./actions";
+import { logout, disconnectBank, logSpend, logIncome, type SpendState } from "./actions";
 
 export type Bucket = {
   key: string;
@@ -81,7 +86,6 @@ function bucketLabel(bucket: string | undefined): string {
 
 export default function HomeView({
   data,
-  accounts,
   connected,
   bankStatus,
   firstName,
@@ -89,7 +93,6 @@ export default function HomeView({
   real,
 }: {
   data: HomeData;
-  accounts: ConnectedAccount[];
   connected: boolean;
   bankStatus: string | null;
   firstName: string | null;
@@ -98,11 +101,17 @@ export default function HomeView({
 }) {
   const router = useRouter();
   const [hidden, setHidden] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [spendOpen, setSpendOpen] = useState(false);
+  const [incomeOpen, setIncomeOpen] = useState(false);
   const [snack, setSnack] = useState<string | null>(null);
   const [spendState, spendAction, spendPending] = useActionState<SpendState, FormData>(
     logSpend,
+    {},
+  );
+  const [incomeState, incomeAction, incomePending] = useActionState<SpendState, FormData>(
+    logIncome,
     {},
   );
   const show = (cents: number, code: string = displayCurrency) =>
@@ -121,6 +130,14 @@ export default function HomeView({
     }
   }, [spendState.at, spendState.ok, spendState.loggedCents, spendState.bucket, displayCurrency, router]);
 
+  useEffect(() => {
+    if (incomeState.at && incomeState.ok) {
+      setIncomeOpen(false);
+      setSnack(`Logged income ${moneyExact(incomeState.loggedCents ?? 0, displayCurrency)}`);
+      router.refresh();
+    }
+  }, [incomeState.at, incomeState.ok, incomeState.loggedCents, displayCurrency, router]);
+
   return (
     <Container maxWidth="sm">
       <Box sx={{ py: 4, pb: 12 }}>
@@ -132,13 +149,24 @@ export default function HomeView({
             <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
               {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
             </Typography>
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => setHidden((h) => !h)}
-            >
-              {hidden ? "Show balances" : "Hide balances"}
-            </Button>
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+              <Button
+                variant="text"
+                size="small"
+                onClick={() => setHidden((h) => !h)}
+              >
+                {hidden ? "Show balances" : "Hide balances"}
+              </Button>
+              <IconButton onClick={() => setMenuOpen(true)} aria-label="Open menu">
+                <Box
+                  component="span"
+                  aria-hidden="true"
+                  sx={{ fontSize: 22, lineHeight: 1 }}
+                >
+                  ☰
+                </Box>
+              </IconButton>
+            </Stack>
           </Stack>
 
           {bankStatus === "connected" && (
@@ -193,58 +221,23 @@ export default function HomeView({
           </Card>
 
           {connected && (
-            <Box sx={{ textAlign: "center" }}>
-              <Button variant="text" size="small" onClick={() => setSpendOpen(true)}>
+            <Stack direction="row" spacing={1.5}>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={() => setSpendOpen(true)}
+              >
                 Log a spend
               </Button>
-            </Box>
-          )}
-
-          <Button variant="outlined" href="/connect">
-            {connected
-              ? "Reconnect your bank (sandbox)"
-              : "Connect your bank (sandbox)"}
-          </Button>
-
-          {connected && (
-            <Box sx={{ textAlign: "center" }}>
               <Button
-                variant="text"
-                size="small"
-                color="inherit"
-                onClick={() => setDisconnectOpen(true)}
+                variant="outlined"
+                size="large"
+                fullWidth
+                onClick={() => setIncomeOpen(true)}
               >
-                Disconnect bank
+                Log income
               </Button>
-            </Box>
-          )}
-
-          {connected && (
-            <Stack spacing={1.5}>
-              <Typography variant="overline" color="text.secondary">
-                Your connected accounts
-              </Typography>
-              {accounts.map((a) => (
-                <Card key={a.id} variant="outlined">
-                  <CardContent>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{ justifyContent: "space-between", alignItems: "center" }}
-                    >
-                      <Box>
-                        <Typography sx={{ fontWeight: 700 }}>{a.name}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {(a.type ?? "account").toLowerCase()}
-                        </Typography>
-                      </Box>
-                      <Typography sx={{ fontWeight: 700 }}>
-                        {show(a.balance_cents)}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
             </Stack>
           )}
 
@@ -301,20 +294,52 @@ export default function HomeView({
           <Typography variant="caption" color="text.secondary">
             {real
               ? "These are your figures, from your connected accounts and the buckets you set."
-              : connected
-                ? "Your bank is connected. Set your buckets on the Buckets tab to see your real safe-to-spend. The numbers above are still samples."
-                : "These are sample numbers for now, until your real money is connected."}
+              : "Set your buckets on the Buckets tab to see your real safe-to-spend."}
           </Typography>
 
-          <Divider />
-
-          <form action={logout}>
-            <Button type="submit" variant="text" size="small" color="inherit">
-              Log out
-            </Button>
-          </form>
         </Stack>
       </Box>
+
+      <Drawer anchor="right" open={menuOpen} onClose={() => setMenuOpen(false)}>
+        <Box sx={{ width: 260 }} role="presentation">
+          <List>
+            <ListItemButton
+              onClick={() => {
+                setMenuOpen(false);
+                router.push("/activity");
+              }}
+            >
+              <ListItemText primary="Recent activity" />
+            </ListItemButton>
+            <ListItemButton
+              onClick={() => {
+                setMenuOpen(false);
+                router.push("/connect");
+              }}
+            >
+              <ListItemText
+                primary={connected ? "Reconnect your bank" : "Connect your bank"}
+              />
+            </ListItemButton>
+            {connected && (
+              <ListItemButton
+                onClick={() => {
+                  setMenuOpen(false);
+                  setDisconnectOpen(true);
+                }}
+              >
+                <ListItemText primary="Disconnect bank" />
+              </ListItemButton>
+            )}
+            <Divider />
+            <form action={logout}>
+              <ListItemButton component="button" type="submit" sx={{ width: "100%" }}>
+                <ListItemText primary="Log out" />
+              </ListItemButton>
+            </form>
+          </List>
+        </Box>
+      </Drawer>
 
       <Dialog open={spendOpen} onClose={() => setSpendOpen(false)} fullWidth maxWidth="xs">
         <form action={spendAction}>
@@ -359,6 +384,43 @@ export default function HomeView({
             </Button>
             <Button type="submit" variant="contained" disabled={spendPending}>
               {spendPending ? "Saving..." : "Log it"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      <Dialog open={incomeOpen} onClose={() => setIncomeOpen(false)} fullWidth maxWidth="xs">
+        <form action={incomeAction}>
+          <DialogTitle>Log income</DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ mb: 2 }}>
+              Add money in (for testing, or cash income). Your safe-to-spend will go
+              up.
+            </DialogContentText>
+            {incomeState.error && (
+              <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
+                {incomeState.error}
+              </Alert>
+            )}
+            <Stack spacing={2}>
+              <TextField
+                name="amount"
+                label="Amount"
+                helperText={`In ${displayCurrency}`}
+                type="number"
+                fullWidth
+                autoFocus
+                slotProps={{ htmlInput: { min: 0, step: "0.01", inputMode: "decimal" } }}
+              />
+              <TextField name="note" label="What was it? (optional)" fullWidth />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button type="button" onClick={() => setIncomeOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained" disabled={incomePending}>
+              {incomePending ? "Saving..." : "Log it"}
             </Button>
           </DialogActions>
         </form>

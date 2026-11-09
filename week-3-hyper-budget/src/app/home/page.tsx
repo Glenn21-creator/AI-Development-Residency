@@ -2,16 +2,17 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import HomeView, { type HomeData, type ConnectedAccount } from "./HomeView";
 
-// Fallback sample data, shown until the person has set buckets and the
-// safe-to-spend function exists. Notes avoid a hardcoded currency.
-const SAMPLE: HomeData = {
-  safeToSpendCents: 6800,
-  onTrack: true,
+// The empty state, shown before the person has connected a bank and set buckets.
+// Everything is zero and has no "Safe"/"Covered" badge, so it never implies money
+// is set aside when nothing is yet. The caption invites them to set up.
+const EMPTY: HomeData = {
+  safeToSpendCents: 0,
+  onTrack: false,
   buckets: [
-    { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: 50000, status: "Safe", statusKind: "safe" },
-    { key: "bills", name: "Bills", note: "3 bills, all covered", amountCents: 12000, status: "Covered", statusKind: "covered" },
-    { key: "savings", name: "Savings cushion", note: "Building quietly toward your cushion", amountCents: 4000, progress: { current: 4000, target: 30000 } },
-    { key: "fun", name: "Fun money", note: "Over halfway this week", amountCents: 6800, status: "Over halfway", statusKind: "heads-up", progress: { current: 11200, target: 18000 } },
+    { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: 0 },
+    { key: "bills", name: "Bills", note: "Held for upcoming bills", amountCents: 0 },
+    { key: "savings", name: "Savings", note: "Tucked away toward your cushion", amountCents: 0 },
+    { key: "fun", name: "Fun money", note: "What's safe to spend right now", amountCents: 0 },
   ],
 };
 
@@ -47,6 +48,10 @@ export default async function HomePage({
     .eq("user_id", user.id)
     .order("name");
   const accounts = (accountsData ?? []) as ConnectedAccount[];
+
+  // Home is for connected people. Before a bank is linked, send them to the connect
+  // page so they are not looking at an empty Home.
+  if (accounts.length === 0) redirect("/start");
 
   const { data: bucketRows } = await supabase
     .from("buckets")
@@ -124,7 +129,7 @@ export default async function HomePage({
           },
         ],
       }
-    : SAMPLE;
+    : EMPTY;
 
   const firstName = firstNameFrom(user.user_metadata ?? {}, user.email ?? "");
   const { data: profile } = await supabase
@@ -137,7 +142,6 @@ export default async function HomePage({
   return (
     <HomeView
       data={data}
-      accounts={accounts}
       connected={accounts.length > 0}
       bankStatus={sp.bank ?? null}
       firstName={firstName}
