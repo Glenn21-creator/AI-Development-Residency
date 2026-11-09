@@ -28,6 +28,7 @@ export type Bucket = {
 export type HomeData = {
   safeToSpendCents: number;
   onTrack: boolean;
+  amountOverspentCents?: number;
   buckets: Bucket[];
 };
 
@@ -112,16 +113,32 @@ export default function HomeView({
                 <Typography variant="h2" sx={{ fontWeight: 700, color: "primary.main" }}>
                   {show(data.safeToSpendCents)}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  This is yours to spend. Essentials and bills are already set
-                  aside.
-                </Typography>
-                {data.onTrack && (
-                  <Chip
-                    label="You're on track this week"
-                    color="success"
-                    variant="outlined"
-                  />
+                {(data.amountOverspentCents ?? 0) > 0 ? (
+                  <>
+                    <Chip
+                      label={`Over by ${show(data.amountOverspentCents ?? 0)} this cycle`}
+                      color="warning"
+                      variant="outlined"
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                      You have gone a little past this cycle. Your next income will
+                      help you catch up.
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <Typography variant="body2" color="text.secondary">
+                      This is yours to spend. Essentials and bills are already set
+                      aside.
+                    </Typography>
+                    {data.onTrack && (
+                      <Chip
+                        label="You're on track this cycle"
+                        color="success"
+                        variant="outlined"
+                      />
+                    )}
+                  </>
                 )}
               </Stack>
             </CardContent>
