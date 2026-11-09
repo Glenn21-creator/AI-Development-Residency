@@ -54,4 +54,31 @@ deliberate simplification, recorded so it is a choice, not an oversight.
   prove correct; built in stages (Stage 1, the per-cycle funding waterfall, is
   done; Stage 2, the overspend cascade, is pending).
 - Relationship to ADR 0004 and 0005: the split runs in SQL (`allocate_cycle`,
-  `cycle_allocations`) and is computed on read, consistent with both.
+  `cycle_allocations`, `cycle_summary`) and is computed on read, consistent with both.
+  `cycle_allocations` gives the gross plan (income split, before spending);
+  `cycle_summary` gives the net (after spending). Both are kept.
+
+## Amendment (2026-11-09): spending attributed by the bank's label
+
+The original decision said all spending drains the buckets fun-first, with no
+guessing which category a purchase is. Wiring that to real data showed it is wrong:
+paying normal rent and bills would drain fun and savings and wrongly read as
+overspent, because a rent payment was not charged to the food & rent bucket.
+
+Revised decision: **attribute each spend to a bucket by the bank's own label.**
+Open-banking data labels transactions (groceries, rent, utilities), and a
+data-driven alias table (`label_buckets`) maps those labels, including synonyms
+across banks and languages (rent, Miete), to our buckets. Unknown labels default to
+fun, so a missing label is always safe.
+
+Each protected bucket (food & rent, bills) then **absorbs its own labelled
+spending**. Only two things draw from fun: discretionary (fun-labelled) spending,
+and any **overflow** where a bucket's spending exceeded its budget. That fun-side
+draw runs through the same cascade (`apply_spending`): safe-to-spend, then fun
+floor, then savings, then leftover bills, then leftover food & rent, with
+`amount_overspent` for anything beyond. `cycle_summary` implements this.
+
+Consequence: correctness now depends on label quality. Rich real-bank labels map
+precisely; the coarse sandbox (`purchase`, `bill_payment`, `credit`) maps bills but
+treats everything else as fun. The fun-first cascade from the original decision is
+retained, but it now acts only on the fun-side draw, not on every euro.

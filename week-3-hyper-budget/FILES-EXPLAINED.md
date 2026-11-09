@@ -603,3 +603,48 @@ for the logged-in user, and then your real cycles appeared.
 
 The lesson worth keeping: an empty result in the SQL Editor often means "no logged-in
 user here", not "no data".
+
+---
+
+## Part 16: Matching spending to buckets by the bank's label
+
+When we wired spending into the engine, a problem showed up, and fixing it taught a
+nice lesson.
+
+### The problem
+
+The first idea was: any spending just eats your fun money first, then savings, then
+bills, then rent. Simple. But it broke on a normal month. If you pay your €800 rent,
+the app charged that €800 against your fun and savings, and told you that you had
+overspent, when all you did was pay the rent you had budgeted for. That is wrong, and
+it is exactly the kind of false alarm that makes people give up.
+
+### The fix: let the bank's label decide
+
+Banks already tag each transaction (groceries, rent, utilities, and so on). So instead
+of guessing, the app reads that label and sends the spending to the matching bucket:
+
+- rent (labelled housing) is charged to the **food & rent** bucket, where it belongs,
+- bills to the **bills** bucket,
+- a coffee to **fun**.
+
+Only genuinely fun spending reduces your safe-to-spend, and only spending that goes
+**over** a bucket's budget spills over and eats into the rest. So a normal month reads
+as healthy, and you are only warned when you truly overspend.
+
+Because different banks (and languages) use different words for the same thing (rent,
+Miete, housing), the app keeps a small **lookup table** of labels, easy to extend, and
+anything it has not seen yet is treated as fun by default so nothing breaks.
+
+### Two views of a cycle
+
+We ended up with two small database helpers, and we deliberately kept both:
+
+- **The plan** (`cycle_allocations`): how your income was split into buckets, before
+  you spent anything.
+- **The reality** (`cycle_summary`): what is left after your spending is matched to
+  its buckets.
+
+They share some inner workings, so we wrote down why we keep both rather than merging
+them, in an Architecture Decision Record (ADR 0012). The short reason: they answer two
+different questions, the plan and the outcome, and both are useful to show.

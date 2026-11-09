@@ -10,20 +10,19 @@ Last updated: 2026-11-09
 ## Where it stands right now
 
 - **Stage 1 (per-cycle funding waterfall): complete and verified.**
-- **Stage 2 (overspend cascade): the cascade function (`apply_spending`) and the
-  label-to-bucket mapping (`label_buckets`) are built.** Still to do: the
-  reconciliation logic (each bucket absorbs its own spending, attributed by the
-  bank's label, with over-budget spending cascading) and wiring it per cycle, so
-  safe-to-spend subtracts spending.
+- **Stage 2 (overspend cascade): complete and verified.** `apply_spending`,
+  `label_buckets`, and `cycle_summary` (the label-aware reconciliation) are built.
+  `cycle_allocations` (gross plan view) and `cycle_summary` (net, after spending) are
+  both kept. Remaining: show `cycle_summary`'s real safe-to-spend on Home in place of
+  the old gross `get_safe_to_spend` (part of the Stage 4 screens).
 - The interim Savings tab (real-balance version) is committed but will be replaced
   by the ledger cushion in Stage 3.
 - The allocation-engine commits are on the branch, **not merged to main**. The
   local `main` folder is behind until you `git pull`.
 - Nothing is in flight; nothing is broken.
 
-**Next:** build the reconciliation logic (attribute each cycle's spending to buckets
-by the bank's label, over-budget cascades) and wire it in so safe-to-spend reflects
-reality.
+**Next:** Stage 3, the cycle-end locking and cumulative savings cushion. (Also
+pending: swap Home's safe-to-spend to `cycle_summary`, part of Stage 4.)
 
 ---
 
@@ -31,9 +30,8 @@ reality.
 
 - [x] **Stage 1 - per-cycle funding waterfall.** Split a cycle's income across the
   buckets. Done.
-- [~] **Stage 2 - overspend cascade.** `apply_spending` and `label_buckets` built;
-  reconciliation (attribute spending by the bank's label, over-budget cascades) and
-  wiring next.
+- [x] **Stage 2 - overspend cascade.** `apply_spending`, `label_buckets`, and
+  `cycle_summary` (label-aware reconciliation) built and verified.
 - [ ] **Stage 3 - cycle-end locking + cumulative cushion.** Lock surviving savings
   per cycle (append-only, compute-on-open); cushion grows.
 - [ ] **Stage 4 - the screens.** Savings cushion view, Home, Buckets settings;
@@ -60,10 +58,11 @@ are tested with simulated multi-cycle data.
 - `50b0d12` - PROGRESS.md, this living build log.
 - `7be9f52` - `apply_spending`: the overspend cascade function (Stage 2).
 - `6d25ffa` - `label_buckets`: map bank spending labels to buckets (synonyms, EN + DE).
+- `5176975` - `cycle_summary`: real safe-to-spend after labelled spending (Stage 2).
 
 ### Supabase migrations run (in the database)
-- `safe_to_spend`, then `allocate_cycle`, `pay_frequency`, `cycle_allocations`,
-  `apply_spending`, `label_buckets`.
+- `safe_to_spend`, `allocate_cycle`, `pay_frequency`, `cycle_allocations`,
+  `apply_spending`, `label_buckets`, `cycle_summary`.
 - All confirmed by test queries.
 
 ### Verified
@@ -72,6 +71,9 @@ are tested with simulated multi-cycle data.
 - Real data: the two real cycles (October, November) split correctly.
 - Overspend cascade: four `apply_spending` cases verified (small spend, crossing into
   savings, reaching food & rent, and spending beyond income via amount_overspent).
+- Label-aware reconciliation: `cycle_summary` verified on a normal month (rent and
+  bills absorbed by their own buckets, safe-to-spend correct) and a rent-over-budget
+  month (the overflow cascades into savings).
 
 ---
 
@@ -82,8 +84,10 @@ are tested with simulated multi-cycle data.
 - "Save what fits" for partial savings cycles.
 - Overspend cascade: fun -> savings -> bills -> food & rent protected longest.
 - Spending attributed to buckets by the bank's own label (data-driven alias table,
-  synonyms + languages, unknown labels default to fun). Amends ADR 0010; the ADR
-  update is pending until the reconciliation logic is built.
+  synonyms + languages, unknown labels default to fun). Recorded as the 2026-11-09
+  amendment to ADR 0010.
+- Keep both `cycle_allocations` (gross plan) and `cycle_summary` (net, after
+  spending) rather than consolidating. Recorded in ADR 0012.
 - Fun floor as a user setting (default 0).
 - Savings cushion via append-only cycle locking (compute-on-open).
 - Regular-income assumption recorded as a deliberate scope choice.

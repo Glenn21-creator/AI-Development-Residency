@@ -15,3 +15,4 @@ past decisions are respected rather than quietly undone.
 - [0009](0009-alerts-in-app-plus-push.md) Alerts as in-app plus push in the MVP
 - [0010](0010-cycle-based-allocation-and-spend-waterfall.md) Cycle-based allocation and the spend waterfall
 - [0011](0011-savings-cushion-cycle-locking.md) Savings cushion as append-only cycle locking
+- [0012](0012-keep-both-cycle-allocations-and-cycle-summary.md) Keep both cycle_allocations (plan) and cycle_summary (net)
