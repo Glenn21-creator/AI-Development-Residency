@@ -26,16 +26,17 @@ export default async function SavingsPage() {
     ? { name: goalRow.name ?? "Emergency cushion", targetCents: goalRow.target_cents ?? 0 }
     : null;
 
-  // Saved so far = the real balance in the person's savings accounts. This is the
-  // same set the safe-to-spend math excludes from spendable money, so the cushion
-  // and the spendable number never double-count the same euro.
-  const { data: accountRows } = await supabase
-    .from("accounts")
-    .select("type,balance_cents")
-    .eq("user_id", user.id);
-  const savedCents = (accountRows ?? [])
-    .filter((a) => (a.type ?? "").toUpperCase() === "SAVINGS")
-    .reduce((sum, a) => sum + (a.balance_cents ?? 0), 0);
+  // Compute-on-open: lock any completed cycles' surviving savings (idempotent), then
+  // read the cumulative cushion (locked cycles plus this cycle's provisional). This
+  // is the append-only ledger cushion (ADR 0011), not the raw savings-account
+  // balance. If the migrations are not applied yet, fall back to 0 so the page works.
+  await supabase.rpc("lock_completed_cycles");
+  let savedCents = 0;
+  const { data: cushionData, error: cushionErr } = await supabase.rpc("savings_cushion");
+  if (!cushionErr) {
+    const n = typeof cushionData === "number" ? cushionData : Number(cushionData);
+    if (Number.isFinite(n)) savedCents = n;
+  }
 
   const { data: profile } = await supabase
     .from("profiles")

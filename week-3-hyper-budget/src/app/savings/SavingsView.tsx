@@ -116,8 +116,8 @@ export default function SavingsView({
         </Card>
 
         <Typography variant="caption" color="text.secondary">
-          This grows from the money in your savings accounts. Nothing to top up by
-          hand.
+          This grows each pay cycle from the savings you set aside, once your spending
+          is covered. Nothing to top up by hand.
         </Typography>
 
         <Box>
