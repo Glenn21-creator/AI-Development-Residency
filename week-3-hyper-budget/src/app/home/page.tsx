@@ -2,16 +2,17 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import HomeView, { type HomeData, type ConnectedAccount } from "./HomeView";
 
-// Fallback sample data, shown until the person has set buckets and the
-// safe-to-spend function exists. Notes avoid a hardcoded currency.
-const SAMPLE: HomeData = {
-  safeToSpendCents: 6800,
-  onTrack: true,
+// The empty state, shown before the person has connected a bank and set buckets.
+// Everything is zero and has no "Safe"/"Covered" badge, so it never implies money
+// is set aside when nothing is yet. The caption invites them to set up.
+const EMPTY: HomeData = {
+  safeToSpendCents: 0,
+  onTrack: false,
   buckets: [
-    { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: 50000, status: "Safe", statusKind: "safe" },
-    { key: "bills", name: "Bills", note: "3 bills, all covered", amountCents: 12000, status: "Covered", statusKind: "covered" },
-    { key: "savings", name: "Savings cushion", note: "Building quietly toward your cushion", amountCents: 4000, progress: { current: 4000, target: 30000 } },
-    { key: "fun", name: "Fun money", note: "Over halfway this week", amountCents: 6800, status: "Over halfway", statusKind: "heads-up", progress: { current: 11200, target: 18000 } },
+    { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: 0 },
+    { key: "bills", name: "Bills", note: "Held for upcoming bills", amountCents: 0 },
+    { key: "savings", name: "Savings", note: "Tucked away toward your cushion", amountCents: 0 },
+    { key: "fun", name: "Fun money", note: "What's safe to spend right now", amountCents: 0 },
   ],
 };
 
@@ -48,44 +49,93 @@ export default async function HomePage({
     .order("name");
   const accounts = (accountsData ?? []) as ConnectedAccount[];
 
+  // Home is for connected people. Before a bank is linked, send them to the connect
+  // page so they are not looking at an empty Home.
+  if (accounts.length === 0) redirect("/start");
+
   const { data: bucketRows } = await supabase
     .from("buckets")
     .select("type,target_cents")
     .eq("user_id", user.id);
-  const bucketCents = (type: string) =>
-    (bucketRows ?? []).find((b) => b.type === type)?.target_cents ?? 0;
   const hasBuckets = (bucketRows ?? []).some((b) => (b.target_cents ?? 0) > 0);
 
-  // The real safe-to-spend for the current cycle, after this cycle's spending, runs
-  // in SQL (cycle_summary via current_cycle_summary). If the migrations are not
-  // applied yet, or nothing has happened this cycle, we fall back to the sample data
-  // so the page still works.
+  // The real current-cycle figures (after this cycle's spending), computed in SQL via
+  // current_cycle_summary. We read the actual amount LEFT in each bucket, not the
+  // targets, so the cards never claim money is set aside when it has been spent or
+  // eaten by an overspend. Falls back to the sample if the migrations are not applied
+  // or the cycle has no activity.
+  const toNum = (v: unknown) => {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
   let safeCents: number | null = null;
   let overspentCents = 0;
+  let essLeft = 0;
+  let billsLeft = 0;
+  let funFloorLeft = 0;
+  let savLeft = 0;
   const { data: cycleRows, error: cycleErr } = await supabase.rpc("current_cycle_summary");
   if (!cycleErr && Array.isArray(cycleRows) && cycleRows.length > 0) {
-    const row = cycleRows[0] as { safe_to_spend: number | string; amount_overspent: number | string };
-    const s = typeof row.safe_to_spend === "number" ? row.safe_to_spend : Number(row.safe_to_spend);
-    const o = typeof row.amount_overspent === "number" ? row.amount_overspent : Number(row.amount_overspent);
-    if (Number.isFinite(s)) safeCents = s;
-    if (Number.isFinite(o)) overspentCents = o;
+    const row = cycleRows[0] as Record<string, number | string>;
+    safeCents = toNum(row.safe_to_spend);
+    overspentCents = toNum(row.amount_overspent);
+    essLeft = toNum(row.essentials_left);
+    billsLeft = toNum(row.bills_left);
+    funFloorLeft = toNum(row.fun_floor_left);
+    savLeft = toNum(row.savings_left);
   }
+
+  // Fun money is the guaranteed fun floor plus the discretionary remainder. The
+  // floor is not a separate bucket; it just keeps some fun in a tight cycle.
+  const funTotal = (safeCents ?? 0) + funFloorLeft;
 
   const useReal = hasBuckets && accounts.length > 0 && safeCents !== null;
 
+  // Honest status: there is money protected, or there is not. No false "Safe".
+  const protectedStatus = (
+    left: number,
+    full: string,
+    empty: string,
+  ): { status: string; statusKind: "safe" | "heads-up" } =>
+    left > 0
+      ? { status: full, statusKind: "safe" }
+      : { status: empty, statusKind: "heads-up" };
+
   const data: HomeData = useReal
     ? {
-        safeToSpendCents: safeCents as number,
-        onTrack: (safeCents as number) > 0 && overspentCents === 0,
+        safeToSpendCents: funTotal,
+        onTrack: funTotal > 0 && overspentCents === 0,
         amountOverspentCents: overspentCents,
         buckets: [
-          { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: bucketCents("essentials"), status: "Safe", statusKind: "safe" },
-          { key: "bills", name: "Bills", note: "Held for upcoming bills", amountCents: bucketCents("bills"), status: "Covered", statusKind: "covered" },
-          { key: "savings", name: "Savings", note: "Tucked away toward your cushion", amountCents: bucketCents("savings") },
-          { key: "fun", name: "Fun money", note: "What's safe to spend right now", amountCents: safeCents as number },
+          {
+            key: "essentials",
+            name: "Food & rent",
+            note: "Set aside first, kept safe",
+            amountCents: essLeft,
+            ...protectedStatus(essLeft, "Safe", "Nothing set aside"),
+          },
+          {
+            key: "bills",
+            name: "Bills",
+            note: "Held for upcoming bills",
+            amountCents: billsLeft,
+            ...protectedStatus(billsLeft, "Covered", "Not covered"),
+          },
+          {
+            key: "savings",
+            name: "Savings",
+            note: "Tucked away toward your cushion",
+            amountCents: savLeft,
+          },
+          {
+            key: "fun",
+            name: "Fun money",
+            note: "What's safe to spend right now",
+            amountCents: funTotal,
+          },
         ],
       }
-    : SAMPLE;
+    : EMPTY;
 
   const firstName = firstNameFrom(user.user_metadata ?? {}, user.email ?? "");
   const { data: profile } = await supabase
@@ -98,7 +148,6 @@ export default async function HomePage({
   return (
     <HomeView
       data={data}
-      accounts={accounts}
       connected={accounts.length > 0}
       bankStatus={sp.bank ?? null}
       firstName={firstName}
