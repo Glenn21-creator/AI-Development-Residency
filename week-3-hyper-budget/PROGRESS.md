@@ -9,17 +9,18 @@ Last updated: 2026-11-09
 
 ## Where it stands right now
 
-- **Allocation engine Stage 1 (per-cycle funding waterfall): complete and verified.**
-- Stage 2 (overspend cascade) not started. Safe-to-spend is still the gross
-  income-minus-buckets figure; it does not yet subtract spending.
+- **Stage 1 (per-cycle funding waterfall): complete and verified.**
+- **Stage 2 (overspend cascade): the cascade function (`apply_spending`) is built
+  and verified.** Still to do: wire it to each cycle's real spending so safe-to-spend
+  subtracts spending (right now it is still the gross income-minus-buckets figure).
 - The interim Savings tab (real-balance version) is committed but will be replaced
   by the ledger cushion in Stage 3.
-- Four allocation-engine commits are on the branch, **not merged to main**. The
+- The allocation-engine commits are on the branch, **not merged to main**. The
   local `main` folder is behind until you `git pull`.
 - Nothing is in flight; nothing is broken.
 
-**Next:** Stage 2, the overspend cascade (subtract each cycle's spending so
-safe-to-spend reflects reality).
+**Next:** wire `apply_spending` to each cycle's real spending so safe-to-spend
+reflects reality.
 
 ---
 
@@ -27,8 +28,8 @@ safe-to-spend reflects reality).
 
 - [x] **Stage 1 - per-cycle funding waterfall.** Split a cycle's income across the
   buckets. Done.
-- [ ] **Stage 2 - overspend cascade.** Subtract spending in reverse priority
-  (fun, then savings, then bills, then food & rent).
+- [~] **Stage 2 - overspend cascade.** `apply_spending` built and verified; wiring
+  to each cycle's real spending is next.
 - [ ] **Stage 3 - cycle-end locking + cumulative cushion.** Lock surviving savings
   per cycle (append-only, compute-on-open); cushion grows.
 - [ ] **Stage 4 - the screens.** Savings cushion view, Home, Buckets settings;
@@ -52,15 +53,20 @@ are tested with simulated multi-cycle data.
   (+ `pay_frequency` column on profiles).
 - `f128e3a` - `cycle_allocations`: wires the waterfall to real cycle income.
 - `d5bfd60` - ADR 0010 and 0011, plus FILES-EXPLAINED Parts 14 and 15.
+- `50b0d12` - PROGRESS.md, this living build log.
+- `7be9f52` - `apply_spending`: the overspend cascade function (Stage 2).
 
 ### Supabase migrations run (in the database)
-- `safe_to_spend`, then `allocate_cycle`, `pay_frequency`, `cycle_allocations`.
+- `safe_to_spend`, then `allocate_cycle`, `pay_frequency`, `cycle_allocations`,
+  `apply_spending`.
 - All confirmed by test queries.
 
 ### Verified
 - Waterfall math: four passing test queries.
 - Multi-cycle behavior: a simulated 4-row test matched exactly.
 - Real data: the two real cycles (October, November) split correctly.
+- Overspend cascade: four `apply_spending` cases verified (small spend, crossing into
+  savings, reaching food & rent, and spending beyond income via amount_overspent).
 
 ---
 
