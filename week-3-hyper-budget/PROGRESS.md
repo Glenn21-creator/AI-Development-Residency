@@ -15,14 +15,15 @@ Last updated: 2026-11-09
   `cycle_allocations` (gross plan view) and `cycle_summary` (net, after spending) are
   both kept. Remaining: show `cycle_summary`'s real safe-to-spend on Home in place of
   the old gross `get_safe_to_spend` (part of the Stage 4 screens).
-- The interim Savings tab (real-balance version) is committed but will be replaced
-  by the ledger cushion in Stage 3.
+- **Stage 3 (cycle-end locking + cumulative cushion): complete and verified.** The
+  Savings tab now shows the append-only ledger cushion (locked completed cycles plus
+  the current cycle's provisional), replacing the interim real-balance version.
 - The allocation-engine commits are on the branch, **not merged to main**. The
   local `main` folder is behind until you `git pull`.
 - Nothing is in flight; nothing is broken.
 
-**Next:** Stage 3, the cycle-end locking and cumulative savings cushion. (Also
-pending: swap Home's safe-to-spend to `cycle_summary`, part of Stage 4.)
+**Next:** Stage 4, the screens, chiefly swapping Home's safe-to-spend to
+`cycle_summary`, plus Buckets polish and an accessibility pass.
 
 ---
 
@@ -32,8 +33,8 @@ pending: swap Home's safe-to-spend to `cycle_summary`, part of Stage 4.)
   buckets. Done.
 - [x] **Stage 2 - overspend cascade.** `apply_spending`, `label_buckets`, and
   `cycle_summary` (label-aware reconciliation) built and verified.
-- [ ] **Stage 3 - cycle-end locking + cumulative cushion.** Lock surviving savings
-  per cycle (append-only, compute-on-open); cushion grows.
+- [x] **Stage 3 - cycle-end locking + cumulative cushion.** Append-only
+  `savings_locks`, locked compute-on-open; cushion grows. Verified live.
 - [ ] **Stage 4 - the screens.** Savings cushion view, Home, Buckets settings;
   accessibility and copy pass.
 
@@ -59,21 +60,32 @@ are tested with simulated multi-cycle data.
 - `7be9f52` - `apply_spending`: the overspend cascade function (Stage 2).
 - `6d25ffa` - `label_buckets`: map bank spending labels to buckets (synonyms, EN + DE).
 - `5176975` - `cycle_summary`: real safe-to-spend after labelled spending (Stage 2).
+- `a7ea15c` - ADR 0010 amendment, ADR 0012, FILES-EXPLAINED Part 16.
+- `c58ea17` - the interim Savings tab (real-balance; now superseded by the ledger).
+- `be354aa` - Stage 3: `savings_locks` ledger, lock and cushion functions, Savings wiring.
 
 ### Supabase migrations run (in the database)
 - `safe_to_spend`, `allocate_cycle`, `pay_frequency`, `cycle_allocations`,
-  `apply_spending`, `label_buckets`, `cycle_summary`.
+  `apply_spending`, `label_buckets`, `cycle_summary`, `savings_locks`,
+  `savings_cushion`.
 - All confirmed by test queries.
 
 ### Verified
 - Waterfall math: four passing test queries.
 - Multi-cycle behavior: a simulated 4-row test matched exactly.
 - Real data: the two real cycles (October, November) split correctly.
-- Overspend cascade: four `apply_spending` cases verified (small spend, crossing into
-  savings, reaching food & rent, and spending beyond income via amount_overspent).
-- Label-aware reconciliation: `cycle_summary` verified on a normal month (rent and
-  bills absorbed by their own buckets, safe-to-spend correct) and a rent-over-budget
-  month (the overflow cascades into savings).
+- Overspend cascade (`apply_spending`): from a funded cycle of food & rent 5000,
+  bills 1000, fun floor 0, savings 500, safe-to-spend 1500 (cents), four spends:
+  1000 (eats fun only), 1800 (fun then 300 of savings), 7000 (fun, savings, bills,
+  then 4000 of food & rent), 9000 (all 8000 plus amount_overspent 1000).
+- Label-aware reconciliation (`cycle_summary`): targets food & rent 80000, bills
+  20000, savings 10000 (cents). Normal month (income 120000; rent 80000, bills 20000,
+  coffee 5000) gives safe-to-spend 5000, savings 10000. Rent-over month (rent 90000,
+  1000 over) cascades the overflow into savings, leaving safe-to-spend 0, savings
+  5000.
+- Cycle-end locking (Stage 3): live on real data. October locked its surviving 500,
+  November contributed 0 (its savings was spent), so the cushion reads 500 and shows
+  495 to go toward the 50000 goal.
 
 ---
 
