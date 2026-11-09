@@ -72,6 +72,7 @@ export default async function HomePage({
   let overspentCents = 0;
   let essLeft = 0;
   let billsLeft = 0;
+  let funFloorLeft = 0;
   let savLeft = 0;
   const { data: cycleRows, error: cycleErr } = await supabase.rpc("current_cycle_summary");
   if (!cycleErr && Array.isArray(cycleRows) && cycleRows.length > 0) {
@@ -80,8 +81,13 @@ export default async function HomePage({
     overspentCents = toNum(row.amount_overspent);
     essLeft = toNum(row.essentials_left);
     billsLeft = toNum(row.bills_left);
+    funFloorLeft = toNum(row.fun_floor_left);
     savLeft = toNum(row.savings_left);
   }
+
+  // Fun money is the guaranteed fun floor plus the discretionary remainder. The
+  // floor is not a separate bucket; it just keeps some fun in a tight cycle.
+  const funTotal = (safeCents ?? 0) + funFloorLeft;
 
   const useReal = hasBuckets && accounts.length > 0 && safeCents !== null;
 
@@ -97,8 +103,8 @@ export default async function HomePage({
 
   const data: HomeData = useReal
     ? {
-        safeToSpendCents: safeCents as number,
-        onTrack: (safeCents as number) > 0 && overspentCents === 0,
+        safeToSpendCents: funTotal,
+        onTrack: funTotal > 0 && overspentCents === 0,
         amountOverspentCents: overspentCents,
         buckets: [
           {
@@ -125,7 +131,7 @@ export default async function HomePage({
             key: "fun",
             name: "Fun money",
             note: "What's safe to spend right now",
-            amountCents: safeCents as number,
+            amountCents: funTotal,
           },
         ],
       }

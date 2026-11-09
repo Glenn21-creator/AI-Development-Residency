@@ -43,6 +43,80 @@ Vercel. Bill reminders and push notifications come after.
 
 ---
 
+## Dogfooding fixes (2026-11-09)
+
+Using the app as a real person turned up a run of trust and usability problems.
+Each one, in plain English: what was wrong, how we fixed it, and what changed.
+
+1. **You could not unlink your bank.** Once connected there was no way back out.
+   Fix: added a **Disconnect** button (behind a confirmation) that deletes the bank
+   connection; the synced accounts and transactions go with it, while your own
+   settings and the savings cushion stay. Changes: new disconnect action, a confirm
+   dialog, and ADR 0013 recording what disconnect removes versus keeps.
+
+2. **No way to see what had happened.** You could log a spend but not look back at
+   it. Fix: a **Recent activity** screen listing every transaction newest-first,
+   with money in and out, the date, whether you logged it or the bank did, and a
+   chip showing which bucket a spend came from. Changes: new `activity` page.
+
+3. **Hard to test the math without a real bank.** Fix: added **Log a spend** and
+   **Log income** so you can feed the engine by hand. Log a spend has a bucket
+   dropdown (fun, food & rent, bills) so the spend lands in the right place, and
+   both show a small "Logged EUR X" confirmation. Changes: two server actions, two
+   dialogs, a confirmation snackbar.
+
+4. **The screen stayed static after logging.** The database updated but Home did
+   not. Cause: Next.js was serving a cached page. Fix: refresh Home right after a
+   log so the new number shows at once. Changes: a `router.refresh()` after each log,
+   plus `revalidatePath` on the actions.
+
+5. **Home showed false confidence.** When a cycle was overspent, the bucket cards
+   still said "Safe" and "Covered" and displayed the targets, not what was really
+   left. For an ADHD money app that is exactly the wrong signal. Fix: Home now reads
+   the real amount **left** in each bucket (via `current_cycle_summary`) and only
+   says "Safe"/"Covered" when there is actually money there; at zero it says
+   "Nothing set aside" / "Not covered", calmly. Changes: page reads real figures,
+   honest status helper.
+
+6. **Overspends ate the wrong buckets.** A normal rent or bill payment was draining
+   fun and savings, because every spend was treated as discretionary. Fix: read the
+   bank's **own label** for each transaction and attribute it to the matching bucket
+   (a synonym table covering different banks and languages; unknown labels default to
+   fun). A protected bucket absorbs its own spending first; only the leftover
+   cascades. Changes: `label_buckets` table and the `cycle_summary` reconciliation,
+   recorded as the 2026-11-09 amendment to ADR 0010.
+
+7. **The connected-accounts list cluttered Home** without doing much. Fix: removed
+   it. Changes: dropped the accounts section from Home.
+
+8. **The menu actions had nowhere to live.** Fix: a **hamburger (three-line) menu**
+   on the right that opens a pane with Recent activity, reconnect/disconnect bank,
+   and log out. Changes: a right-side Drawer in the Home view.
+
+9. **Connect-first onboarding.** New people were landing on an empty Home. Fix:
+   after login, if no bank is linked you are sent to a **Connect your bank** page
+   first, then on to Home. Changes: new `start` page and a redirect from Home.
+
+10. **Empty state implied money that was not there.** The sample buckets showed made-up
+    amounts. Fix: before you have connected and set buckets, everything reads **zero**
+    with no "Safe"/"Covered" badge, so it never pretends money is set aside.
+
+11. **Log buttons were plain text.** Fix: **Log a spend** and **Log income** are now
+    proper side-by-side buttons under the safe-to-spend card.
+
+12. **The fun floor was hidden, so the numbers did not add up.** The fun floor (the
+    small amount of fun money guaranteed even in a tight cycle) is not a separate
+    bucket, but Home was showing only the discretionary part as "Fun money". With a
+    EUR 100 floor on EUR 1500 income it showed EUR 300, and the cards summed to EUR
+    1400, not your income. Fix: **Fun money now shows the floor plus the discretionary
+    remainder** (EUR 400), so the big safe-to-spend number includes the floor and the
+    four cards finally add up to what came in. Changes: `funTotal = safe_to_spend +
+    fun_floor_left` used for both the headline number and the Fun money card.
+
+Deploy and login fixes from the same day are recorded just above.
+
+---
+
 ## The allocation engine: stages
 
 - [x] **Stage 1 - per-cycle funding waterfall.** Split a cycle's income across the
