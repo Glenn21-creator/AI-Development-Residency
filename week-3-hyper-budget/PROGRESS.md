@@ -139,6 +139,14 @@ are tested with simulated multi-cycle data.
 
 ---
 
+## Planned next (post-submission)
+
+- CSV importer: upload a Revolut CSV export to load real accounts and transactions
+  into your own Supabase, so the owner can run the app on real money without live
+  open banking. Deliberately kept to CSV/manual (no TrueLayer Live), to avoid the
+  regulatory, security, and approval burden of real open-banking access. Plan: build
+  it to try with a real pay cycle.
+
 ## Later ideas (post-MVP, not scheduled)
 
 - User-created custom buckets with automatic spending assignment, powered by a
