@@ -13,17 +13,20 @@ Last updated: 2026-11-09
 - **Stage 2 (overspend cascade): complete and verified.** `apply_spending`,
   `label_buckets`, and `cycle_summary` (the label-aware reconciliation) are built.
   `cycle_allocations` (gross plan view) and `cycle_summary` (net, after spending) are
-  both kept. Remaining: show `cycle_summary`'s real safe-to-spend on Home in place of
-  the old gross `get_safe_to_spend` (part of the Stage 4 screens).
+  both kept.
 - **Stage 3 (cycle-end locking + cumulative cushion): complete and verified.** The
   Savings tab now shows the append-only ledger cushion (locked completed cycles plus
   the current cycle's provisional), replacing the interim real-balance version.
+- **Stage 4 (screens): in progress.** Home now shows the real after-spending
+  safe-to-spend (via `current_cycle_summary`) with a calm over-budget message.
+  Remaining: Buckets polish and a broader accessibility pass; the Alerts tab is still
+  a placeholder.
 - The allocation-engine commits are on the branch, **not merged to main**. The
   local `main` folder is behind until you `git pull`.
 - Nothing is in flight; nothing is broken.
 
-**Next:** Stage 4, the screens, chiefly swapping Home's safe-to-spend to
-`cycle_summary`, plus Buckets polish and an accessibility pass.
+**Next:** finish Stage 4 polish (Buckets, broader accessibility pass), then the Alerts
+tab and deploying to Vercel.
 
 ---
 
@@ -35,8 +38,9 @@ Last updated: 2026-11-09
   `cycle_summary` (label-aware reconciliation) built and verified.
 - [x] **Stage 3 - cycle-end locking + cumulative cushion.** Append-only
   `savings_locks`, locked compute-on-open; cushion grows. Verified live.
-- [ ] **Stage 4 - the screens.** Savings cushion view, Home, Buckets settings;
-  accessibility and copy pass.
+- [~] **Stage 4 - the screens.** Home now shows the real safe-to-spend
+  (`current_cycle_summary`) with a kind over-budget message; Savings cushion view done.
+  Remaining: Buckets polish, a broader accessibility pass, and the Alerts tab.
 
 Cross-cutting: real sandbox data is nearly all one or two dates, so Stages 2 and 3
 are tested with simulated multi-cycle data.
@@ -63,11 +67,12 @@ are tested with simulated multi-cycle data.
 - `a7ea15c` - ADR 0010 amendment, ADR 0012, FILES-EXPLAINED Part 16.
 - `c58ea17` - the interim Savings tab (real-balance; now superseded by the ledger).
 - `be354aa` - Stage 3: `savings_locks` ledger, lock and cushion functions, Savings wiring.
+- `fdd0e02` - Stage 4: `current_cycle_summary`, real safe-to-spend on Home, over-budget message.
 
 ### Supabase migrations run (in the database)
 - `safe_to_spend`, `allocate_cycle`, `pay_frequency`, `cycle_allocations`,
   `apply_spending`, `label_buckets`, `cycle_summary`, `savings_locks`,
-  `savings_cushion`.
+  `savings_cushion`, `current_cycle_summary`.
 - All confirmed by test queries.
 
 ### Verified
@@ -86,6 +91,8 @@ are tested with simulated multi-cycle data.
 - Cycle-end locking (Stage 3): live on real data. October locked its surviving 500,
   November contributed 0 (its savings was spent), so the cushion reads 500 and shows
   495 to go toward the 50000 goal.
+- Home real safe-to-spend (Stage 4): live, Home now shows the current cycle's real
+  after-spending figure (via `current_cycle_summary`) instead of the old gross number.
 
 ---
 
