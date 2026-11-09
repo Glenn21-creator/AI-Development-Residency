@@ -26,6 +26,14 @@ Last updated: 2026-11-09
   local `main` folder is behind until you `git pull`.
 - Nothing is in flight; nothing is broken.
 
+**Deploy and fixes (2026-11-09):** first Vercel deploy returned a 500 because the
+session middleware had no Supabase env vars at build time. Fixed two ways: the
+middleware now fails soft (continues instead of 500), and the four env vars must be
+set in Vercel, then redeploy. Also fixed a double-login (the Next.js router cache
+served a stale logged-out /home) by calling revalidatePath on the auth redirects.
+Still to do on deploy: set the env vars in Vercel and point Supabase redirect URLs
+and TrueLayer's redirect URI at the live domain.
+
 **Next:** finish Stage 4 polish (Buckets, broader accessibility pass), then deploy to
 Vercel. Bill reminders and push notifications come after.
 

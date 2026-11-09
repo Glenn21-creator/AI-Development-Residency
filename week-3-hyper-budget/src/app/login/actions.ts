@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { error?: string; message?: string };
@@ -34,6 +35,9 @@ export async function authenticate(
           "Account created. Check your email to confirm, then come back and log in.",
       };
     }
+    // Clear the client router cache so /home is fetched fresh with the new
+    // session, otherwise a stale logged-out page can bounce you back to login.
+    revalidatePath("/", "layout");
     redirect("/home");
   }
 
@@ -42,6 +46,8 @@ export async function authenticate(
     // Deliberately vague, so a stranger cannot learn which emails have accounts.
     return { error: "That email and password don't match. Want to try again?" };
   }
+  // Clear the client router cache so /home is fetched fresh with the new session.
+  revalidatePath("/", "layout");
   redirect("/home");
 }
 

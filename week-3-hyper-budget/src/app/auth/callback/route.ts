@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 // Where Google (via Supabase) sends the person back after they sign in.
@@ -12,6 +13,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Clear the client router cache so the destination is fetched fresh with
+      // the new session.
+      revalidatePath("/", "layout");
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
