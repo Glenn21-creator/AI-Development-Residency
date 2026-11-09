@@ -113,6 +113,16 @@ Each one, in plain English: what was wrong, how we fixed it, and what changed.
     four cards finally add up to what came in. Changes: `funTotal = safe_to_spend +
     fun_floor_left` used for both the headline number and the Fun money card.
 
+13. **No easy way to start a test over.** Clearing test data meant running SQL by
+    hand each time. Fix: a **Clear my data (testing)** item in the menu pane (behind a
+    confirmation) that wipes your transactions, accounts, bank connection, and savings
+    cushion, while keeping your settings (buckets, pay frequency, savings goal). It
+    runs a `clear_my_data` SQL function that is scoped to the signed-in user, so a
+    person can only ever clear their own data. Changes: new migration
+    `20261109200000_clear_my_data.sql`, a `clearMyData` server action, and the pane
+    item with a confirm dialog. (Run the new migration in Supabase once before using
+    the button.)
+
 Deploy and login fixes from the same day are recorded just above.
 
 ---

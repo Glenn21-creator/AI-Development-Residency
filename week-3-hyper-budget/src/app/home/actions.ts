@@ -28,6 +28,28 @@ export async function disconnectBank() {
   revalidatePath("/alerts");
 }
 
+// Clear my data (testing). Wipes the person's transactions, accounts, bank
+// connection, and savings cushion so the engine can be tested from a clean slate.
+// Their own settings (buckets, pay frequency, savings goal) stay. The actual
+// deletes happen in the clear_my_data SQL function, which is scoped to the signed-in
+// user, so a person can only ever clear their own data. With no accounts left, Home
+// sends them back to the connect page.
+export async function clearMyData() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  await supabase.rpc("clear_my_data");
+
+  revalidatePath("/home");
+  revalidatePath("/savings");
+  revalidatePath("/alerts");
+  revalidatePath("/activity");
+  redirect("/start");
+}
+
 export type SpendState = {
   ok?: boolean;
   error?: string;

@@ -27,7 +27,14 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import BottomNav from "@/components/BottomNav";
-import { logout, disconnectBank, logSpend, logIncome, type SpendState } from "./actions";
+import {
+  logout,
+  disconnectBank,
+  logSpend,
+  logIncome,
+  clearMyData,
+  type SpendState,
+} from "./actions";
 
 export type Bucket = {
   key: string;
@@ -103,6 +110,7 @@ export default function HomeView({
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [disconnectOpen, setDisconnectOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
   const [spendOpen, setSpendOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [snack, setSnack] = useState<string | null>(null);
@@ -332,6 +340,19 @@ export default function HomeView({
               </ListItemButton>
             )}
             <Divider />
+            <ListItemButton
+              onClick={() => {
+                setMenuOpen(false);
+                setClearOpen(true);
+              }}
+            >
+              <ListItemText
+                primary="Clear my data (testing)"
+                secondary="Start fresh. Keeps your settings."
+                slotProps={{ secondary: { sx: { fontSize: 12 } } }}
+              />
+            </ListItemButton>
+            <Divider />
             <form action={logout}>
               <ListItemButton component="button" type="submit" sx={{ width: "100%" }}>
                 <ListItemText primary="Log out" />
@@ -440,6 +461,25 @@ export default function HomeView({
           <form action={disconnectBank}>
             <Button type="submit" color="warning" onClick={() => setDisconnectOpen(false)}>
               Disconnect
+            </Button>
+          </form>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={clearOpen} onClose={() => setClearOpen(false)}>
+        <DialogTitle>Clear your data?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This is a testing tool. It permanently removes your transactions,
+            connected accounts, and savings cushion so you can start fresh. Your
+            buckets, pay frequency, and savings goal stay. This cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setClearOpen(false)}>Keep my data</Button>
+          <form action={clearMyData}>
+            <Button type="submit" color="warning" onClick={() => setClearOpen(false)}>
+              Clear it
             </Button>
           </form>
         </DialogActions>
