@@ -52,26 +52,43 @@ export default async function HomePage({
     .from("buckets")
     .select("type,target_cents")
     .eq("user_id", user.id);
-  const bucketCents = (type: string) =>
-    (bucketRows ?? []).find((b) => b.type === type)?.target_cents ?? 0;
   const hasBuckets = (bucketRows ?? []).some((b) => (b.target_cents ?? 0) > 0);
 
-  // The real safe-to-spend for the current cycle, after this cycle's spending, runs
-  // in SQL (cycle_summary via current_cycle_summary). If the migrations are not
-  // applied yet, or nothing has happened this cycle, we fall back to the sample data
-  // so the page still works.
+  // The real current-cycle figures (after this cycle's spending), computed in SQL via
+  // current_cycle_summary. We read the actual amount LEFT in each bucket, not the
+  // targets, so the cards never claim money is set aside when it has been spent or
+  // eaten by an overspend. Falls back to the sample if the migrations are not applied
+  // or the cycle has no activity.
+  const toNum = (v: unknown) => {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
   let safeCents: number | null = null;
   let overspentCents = 0;
+  let essLeft = 0;
+  let billsLeft = 0;
+  let savLeft = 0;
   const { data: cycleRows, error: cycleErr } = await supabase.rpc("current_cycle_summary");
   if (!cycleErr && Array.isArray(cycleRows) && cycleRows.length > 0) {
-    const row = cycleRows[0] as { safe_to_spend: number | string; amount_overspent: number | string };
-    const s = typeof row.safe_to_spend === "number" ? row.safe_to_spend : Number(row.safe_to_spend);
-    const o = typeof row.amount_overspent === "number" ? row.amount_overspent : Number(row.amount_overspent);
-    if (Number.isFinite(s)) safeCents = s;
-    if (Number.isFinite(o)) overspentCents = o;
+    const row = cycleRows[0] as Record<string, number | string>;
+    safeCents = toNum(row.safe_to_spend);
+    overspentCents = toNum(row.amount_overspent);
+    essLeft = toNum(row.essentials_left);
+    billsLeft = toNum(row.bills_left);
+    savLeft = toNum(row.savings_left);
   }
 
   const useReal = hasBuckets && accounts.length > 0 && safeCents !== null;
+
+  // Honest status: there is money protected, or there is not. No false "Safe".
+  const protectedStatus = (
+    left: number,
+    full: string,
+    empty: string,
+  ): { status: string; statusKind: "safe" | "heads-up" } =>
+    left > 0
+      ? { status: full, statusKind: "safe" }
+      : { status: empty, statusKind: "heads-up" };
 
   const data: HomeData = useReal
     ? {
@@ -79,10 +96,32 @@ export default async function HomePage({
         onTrack: (safeCents as number) > 0 && overspentCents === 0,
         amountOverspentCents: overspentCents,
         buckets: [
-          { key: "essentials", name: "Food & rent", note: "Set aside first, kept safe", amountCents: bucketCents("essentials"), status: "Safe", statusKind: "safe" },
-          { key: "bills", name: "Bills", note: "Held for upcoming bills", amountCents: bucketCents("bills"), status: "Covered", statusKind: "covered" },
-          { key: "savings", name: "Savings", note: "Tucked away toward your cushion", amountCents: bucketCents("savings") },
-          { key: "fun", name: "Fun money", note: "What's safe to spend right now", amountCents: safeCents as number },
+          {
+            key: "essentials",
+            name: "Food & rent",
+            note: "Set aside first, kept safe",
+            amountCents: essLeft,
+            ...protectedStatus(essLeft, "Safe", "Nothing set aside"),
+          },
+          {
+            key: "bills",
+            name: "Bills",
+            note: "Held for upcoming bills",
+            amountCents: billsLeft,
+            ...protectedStatus(billsLeft, "Covered", "Not covered"),
+          },
+          {
+            key: "savings",
+            name: "Savings",
+            note: "Tucked away toward your cushion",
+            amountCents: savLeft,
+          },
+          {
+            key: "fun",
+            name: "Fun money",
+            note: "What's safe to spend right now",
+            amountCents: safeCents as number,
+          },
         ],
       }
     : SAMPLE;
