@@ -17,16 +17,17 @@ Last updated: 2026-11-09
 - **Stage 3 (cycle-end locking + cumulative cushion): complete and verified.** The
   Savings tab now shows the append-only ledger cushion (locked completed cycles plus
   the current cycle's provisional), replacing the interim real-balance version.
-- **Stage 4 (screens): in progress.** Home now shows the real after-spending
-  safe-to-spend (via `current_cycle_summary`) with a calm over-budget message.
-  Remaining: Buckets polish and a broader accessibility pass; the Alerts tab is still
-  a placeholder.
+- **Stage 4 (screens): in progress.** Home shows the real after-spending
+  safe-to-spend (via `current_cycle_summary`) with a calm over-budget message, and the
+  Alerts tab shows gentle in-app nudges (fun-money thresholds, over budget, all-clear).
+  Remaining: Buckets polish, a broader accessibility pass, bill reminders, and push
+  notifications (ADR 0009).
 - The allocation-engine commits are on the branch, **not merged to main**. The
   local `main` folder is behind until you `git pull`.
 - Nothing is in flight; nothing is broken.
 
-**Next:** finish Stage 4 polish (Buckets, broader accessibility pass), then the Alerts
-tab and deploying to Vercel.
+**Next:** finish Stage 4 polish (Buckets, broader accessibility pass), then deploy to
+Vercel. Bill reminders and push notifications come after.
 
 ---
 
@@ -38,9 +39,9 @@ tab and deploying to Vercel.
   `cycle_summary` (label-aware reconciliation) built and verified.
 - [x] **Stage 3 - cycle-end locking + cumulative cushion.** Append-only
   `savings_locks`, locked compute-on-open; cushion grows. Verified live.
-- [~] **Stage 4 - the screens.** Home now shows the real safe-to-spend
-  (`current_cycle_summary`) with a kind over-budget message; Savings cushion view done.
-  Remaining: Buckets polish, a broader accessibility pass, and the Alerts tab.
+- [~] **Stage 4 - the screens.** Home (real safe-to-spend + over-budget message),
+  Savings cushion, and the in-app Alerts tab are done. Remaining: Buckets polish, a
+  broader accessibility pass, bill reminders, and push notifications.
 
 Cross-cutting: real sandbox data is nearly all one or two dates, so Stages 2 and 3
 are tested with simulated multi-cycle data.
@@ -68,6 +69,7 @@ are tested with simulated multi-cycle data.
 - `c58ea17` - the interim Savings tab (real-balance; now superseded by the ledger).
 - `be354aa` - Stage 3: `savings_locks` ledger, lock and cushion functions, Savings wiring.
 - `fdd0e02` - Stage 4: `current_cycle_summary`, real safe-to-spend on Home, over-budget message.
+- `f0faa9d` - the in-app Alerts tab (gentle cycle nudges).
 
 ### Supabase migrations run (in the database)
 - `safe_to_spend`, `allocate_cycle`, `pay_frequency`, `cycle_allocations`,
@@ -93,6 +95,8 @@ are tested with simulated multi-cycle data.
   495 to go toward the 50000 goal.
 - Home real safe-to-spend (Stage 4): live, Home now shows the current cycle's real
   after-spending figure (via `current_cycle_summary`) instead of the old gross number.
+- Alerts tab (Stage 4): live, shows the right in-app fun-money nudge for the current
+  cycle, with kind copy, or a calm all-clear when nothing needs attention.
 
 ---
 
@@ -117,11 +121,19 @@ are tested with simulated multi-cycle data.
 
 ## Still to do (beyond the engine)
 
-- Merge the allocation-engine branch commits to main (when ready).
-- Alerts tab (threshold alerts, bill reminders).
+- Alerts: in-app nudges done; still to add bill reminders and push notifications.
 - Onboarding flow (including asking pay frequency).
 - Store the bank token in Supabase Vault for background re-sync (currently not
   stored; reconnect to refresh).
 - Address the moderate npm vulnerabilities before launch.
 - Deploy to Vercel for a live URL.
 - Submit to mdenner@techfleet.org.
+
+---
+
+## Later ideas (post-MVP, not scheduled)
+
+- User-created custom buckets with automatic spending assignment, powered by a
+  built-in AI agent that reads each transaction and infers its category (beyond the
+  fixed-label mapping). Fits the MMP "AI chatbot for check-ins and coaching". Large:
+  it would rework the fixed-priority allocation engine, so it is deliberately post-MVP.
