@@ -12,8 +12,13 @@ import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Divider from "@mui/material/Divider";
 import Alert from "@mui/material/Alert";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
 import BottomNav from "@/components/BottomNav";
-import { logout } from "./actions";
+import { logout, disconnectBank } from "./actions";
 
 export type Bucket = {
   key: string;
@@ -70,6 +75,7 @@ export default function HomeView({
   real: boolean;
 }) {
   const [hidden, setHidden] = useState(false);
+  const [disconnectOpen, setDisconnectOpen] = useState(false);
   const show = (cents: number, code: string = displayCurrency) =>
     hidden ? "•••" : money(cents, code);
 
@@ -149,6 +155,19 @@ export default function HomeView({
               ? "Reconnect your bank (sandbox)"
               : "Connect your bank (sandbox)"}
           </Button>
+
+          {connected && (
+            <Box sx={{ textAlign: "center" }}>
+              <Button
+                variant="text"
+                size="small"
+                color="inherit"
+                onClick={() => setDisconnectOpen(true)}
+              >
+                Disconnect bank
+              </Button>
+            </Box>
+          )}
 
           {connected && (
             <Stack spacing={1.5}>
@@ -246,6 +265,25 @@ export default function HomeView({
           </form>
         </Stack>
       </Box>
+
+      <Dialog open={disconnectOpen} onClose={() => setDisconnectOpen(false)}>
+        <DialogTitle>Disconnect your bank?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This removes your linked accounts and their transactions from Hyper
+            Budget. Your buckets and savings goal stay, and you can reconnect any
+            time.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDisconnectOpen(false)}>Keep connected</Button>
+          <form action={disconnectBank}>
+            <Button type="submit" color="warning" onClick={() => setDisconnectOpen(false)}>
+              Disconnect
+            </Button>
+          </form>
+        </DialogActions>
+      </Dialog>
 
       <BottomNav />
     </Container>

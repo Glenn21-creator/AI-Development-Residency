@@ -17,6 +17,10 @@ Last updated: 2026-11-09
 - **Stage 3 (cycle-end locking + cumulative cushion): complete and verified.** The
   Savings tab now shows the append-only ledger cushion (locked completed cycles plus
   the current cycle's provisional), replacing the interim real-balance version.
+- **Added via dogfooding and homework:** a bank **Disconnect** button (with a
+  confirmation) so a person can unlink their bank and remove that data; a **database
+  diagram** at `docs/database-diagram.md` (ERD); and **usability-test templates** in
+  `docs/usability/` for the advanced homework.
 - **Stage 4 (screens): in progress.** Home shows the real after-spending
   safe-to-spend (via `current_cycle_summary`) with a calm over-budget message, and the
   Alerts tab shows gentle in-app nudges (fun-money thresholds, over budget, all-clear).
@@ -138,6 +142,14 @@ are tested with simulated multi-cycle data.
 - Submit to mdenner@techfleet.org.
 
 ---
+
+## Planned next (post-submission)
+
+- CSV importer: upload a Revolut CSV export to load real accounts and transactions
+  into your own Supabase, so the owner can run the app on real money without live
+  open banking. Deliberately kept to CSV/manual (no TrueLayer Live), to avoid the
+  regulatory, security, and approval burden of real open-banking access. Plan: build
+  it to try with a real pay cycle.
 
 ## Later ideas (post-MVP, not scheduled)
 
