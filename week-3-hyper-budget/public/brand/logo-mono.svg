@@ -1,0 +1,9 @@
+<svg width="512" height="512" viewBox="0 0 512 512" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Hyper Budget</title>
+  <desc>Single-colour Hyper Budget mark: an H with a level crossbar, using currentColor.</desc>
+  <g fill="currentColor">
+    <rect x="154" y="141" width="42" height="230" rx="19"/>
+    <rect x="316" y="141" width="42" height="230" rx="19"/>
+    <rect x="176" y="233" width="160" height="46" rx="23"/>
+  </g>
+</svg>

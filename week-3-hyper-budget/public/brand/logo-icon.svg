@@ -1,0 +1,8 @@
+<svg width="512" height="512" viewBox="0 0 512 512" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Hyper Budget</title>
+  <desc>A rounded teal tile with a white H whose crossbar is a warm amber bar.</desc>
+  <rect x="0" y="0" width="512" height="512" rx="120" fill="#2E7D6B"/>
+  <rect x="154" y="141" width="42" height="230" rx="19" fill="#FFFFFF"/>
+  <rect x="316" y="141" width="42" height="230" rx="19" fill="#FFFFFF"/>
+  <rect x="176" y="233" width="160" height="46" rx="23" fill="#E8A33D"/>
+</svg>
