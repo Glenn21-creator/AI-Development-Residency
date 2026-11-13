@@ -100,6 +100,22 @@ describe(
       assert.equal(safeToSpendDisplay(a), 40000);
     });
 
-    // YOUR TURN: your next tests go below here.
+    // Written by Glenn.
+    // BDD: Given the same buckets, When income of 0 lands, Then nothing is funded
+    // and safe-to-spend is 0.
+    test("leaves 0 safe-to-spend on 0 income", async () => {
+      const a = await callAllocateCycle(0, 80000, 20000, 10000, 10000);
+      assert.equal(safeToSpendDisplay(a), 0);
+    });
+
+    // Written by Glenn.
+    // BDD: Given the same buckets (savings target 100), When a lean income of 1150
+    // lands, Then savings gets only what fits (50, not the full 100), and the
+    // headline safe-to-spend shows 100. This proves the "save what fits" rule.
+    test("saves only what fits on a lean 1150 income", async () => {
+      const a = await callAllocateCycle(115000, 80000, 20000, 10000, 10000);
+      assert.equal(a.savingsFunded, 5000);
+      assert.equal(safeToSpendDisplay(a), 10000);
+    });
   },
 );
