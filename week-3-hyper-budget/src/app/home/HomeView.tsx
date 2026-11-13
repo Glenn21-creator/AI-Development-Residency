@@ -33,6 +33,7 @@ import {
   logSpend,
   logIncome,
   clearMyData,
+  resetToNewUser,
   type SpendState,
   type ClearState,
 } from "./actions";
@@ -112,6 +113,7 @@ export default function HomeView({
   const [menuOpen, setMenuOpen] = useState(false);
   const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [spendOpen, setSpendOpen] = useState(false);
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [snack, setSnack] = useState<string | null>(null);
@@ -127,6 +129,10 @@ export default function HomeView({
     clearMyData,
     {},
   );
+  const [resetState, resetAction, resetPending] = useActionState<ClearState, FormData>(
+    resetToNewUser,
+    {},
+  );
   const show = (cents: number, code: string = displayCurrency) =>
     hidden ? "•••" : money(cents, code);
 
@@ -136,7 +142,7 @@ export default function HomeView({
     if (spendState.at && spendState.ok) {
       setSpendOpen(false);
       setSnack(
-        `Logged ${moneyExact(spendState.loggedCents ?? 0, displayCurrency)} to ${bucketLabel(spendState.bucket)}`,
+        `Spent ${moneyExact(spendState.loggedCents ?? 0, displayCurrency)} from ${bucketLabel(spendState.bucket)}`,
       );
       // Re-fetch the server-rendered numbers so the screen reflects the new spend.
       router.refresh();
@@ -146,7 +152,7 @@ export default function HomeView({
   useEffect(() => {
     if (incomeState.at && incomeState.ok) {
       setIncomeOpen(false);
-      setSnack(`Logged income ${moneyExact(incomeState.loggedCents ?? 0, displayCurrency)}`);
+      setSnack(`Added income ${moneyExact(incomeState.loggedCents ?? 0, displayCurrency)}`);
       router.refresh();
     }
   }, [incomeState.at, incomeState.ok, incomeState.loggedCents, displayCurrency, router]);
@@ -161,6 +167,15 @@ export default function HomeView({
       router.refresh();
     }
   }, [clearState.at, clearState.ok, router]);
+
+  // On a successful reset, the person has no buckets, so take them to the first-run
+  // welcome, the same place a brand-new user starts.
+  useEffect(() => {
+    if (resetState.at && resetState.ok) {
+      setResetOpen(false);
+      router.push("/onboarding");
+    }
+  }, [resetState.at, resetState.ok, router]);
 
   return (
     <Container maxWidth="sm">
@@ -204,6 +219,8 @@ export default function HomeView({
             </Alert>
           )}
 
+          {connected ? (
+          <>
           <Card variant="outlined" sx={{ bgcolor: "#E9F5EE", borderColor: "#CFE6DA" }}>
             <CardContent>
               <Stack spacing={1} sx={{ alignItems: "center", textAlign: "center" }}>
@@ -252,7 +269,7 @@ export default function HomeView({
                 fullWidth
                 onClick={() => setSpendOpen(true)}
               >
-                Log a spend
+                Add a transaction
               </Button>
               <Button
                 variant="outlined"
@@ -260,7 +277,7 @@ export default function HomeView({
                 fullWidth
                 onClick={() => setIncomeOpen(true)}
               >
-                Log income
+                Add income
               </Button>
             </Stack>
           )}
@@ -320,12 +337,41 @@ export default function HomeView({
               ? "These are your figures, from your connected accounts and the buckets you set."
               : "Set your buckets on the Buckets tab to see your real safe-to-spend."}
           </Typography>
+          </>
+          ) : (
+            <Card variant="outlined">
+              <CardContent>
+                <Stack spacing={2} sx={{ alignItems: "center", textAlign: "center", py: 2 }}>
+                  <Typography variant="h6" component="h2" sx={{ fontWeight: 700 }}>
+                    Connect your bank to get started
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Your buckets are set. Connect a bank account and Hyper Budget will
+                    show you what is safe to spend. This is the sandbox, so use the test
+                    login when it asks. Nothing real is touched.
+                  </Typography>
+                  <Button variant="contained" size="large" href="/connect">
+                    Connect your bank (sandbox)
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
 
         </Stack>
       </Box>
 
-      <Drawer anchor="right" open={menuOpen} onClose={() => setMenuOpen(false)}>
+      <Drawer anchor="left" open={menuOpen} onClose={() => setMenuOpen(false)}>
         <Box sx={{ width: 260 }} role="presentation">
+          <Box sx={{ px: 2, py: 2 }}>
+            <Box
+              component="img"
+              src="/brand/logo-full.svg"
+              alt="Hyper Budget"
+              sx={{ width: "100%", maxWidth: 180, height: "auto" }}
+            />
+          </Box>
+          <Divider />
           <List>
             <ListItemButton
               onClick={() => {
@@ -368,6 +414,18 @@ export default function HomeView({
                 slotProps={{ secondary: { sx: { fontSize: 12 } } }}
               />
             </ListItemButton>
+            <ListItemButton
+              onClick={() => {
+                setMenuOpen(false);
+                setResetOpen(true);
+              }}
+            >
+              <ListItemText
+                primary="Reset to new user (testing)"
+                secondary="Wipes everything, back to the welcome screen."
+                slotProps={{ secondary: { sx: { fontSize: 12 } } }}
+              />
+            </ListItemButton>
             <Divider />
             <form action={logout}>
               <ListItemButton component="button" type="submit" sx={{ width: "100%" }}>
@@ -380,7 +438,7 @@ export default function HomeView({
 
       <Dialog open={spendOpen} onClose={() => setSpendOpen(false)} fullWidth maxWidth="xs">
         <form action={spendAction}>
-          <DialogTitle>Log a spend</DialogTitle>
+          <DialogTitle>Add a transaction</DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ mb: 2 }}>
               Add a spend and watch your safe-to-spend update.
@@ -420,7 +478,7 @@ export default function HomeView({
               Cancel
             </Button>
             <Button type="submit" variant="contained" disabled={spendPending}>
-              {spendPending ? "Saving..." : "Log it"}
+              {spendPending ? "Saving..." : "Add it"}
             </Button>
           </DialogActions>
         </form>
@@ -428,7 +486,7 @@ export default function HomeView({
 
       <Dialog open={incomeOpen} onClose={() => setIncomeOpen(false)} fullWidth maxWidth="xs">
         <form action={incomeAction}>
-          <DialogTitle>Log income</DialogTitle>
+          <DialogTitle>Add income</DialogTitle>
           <DialogContent>
             <DialogContentText sx={{ mb: 2 }}>
               Add money in (for testing, or cash income). Your safe-to-spend will go
@@ -457,7 +515,7 @@ export default function HomeView({
               Cancel
             </Button>
             <Button type="submit" variant="contained" disabled={incomePending}>
-              {incomePending ? "Saving..." : "Log it"}
+              {incomePending ? "Saving..." : "Add it"}
             </Button>
           </DialogActions>
         </form>
@@ -504,6 +562,33 @@ export default function HomeView({
             </Button>
             <Button type="submit" color="warning" disabled={clearPending}>
               {clearPending ? "Clearing..." : "Clear it"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
+        <form action={resetAction}>
+          <DialogTitle>Reset to a new user?</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              This is a testing tool. It permanently deletes your buckets, bank
+              connection, accounts, transactions, and savings cushion, so the app
+              treats you as a brand-new user and you start again from the welcome
+              screen. Your login stays. This cannot be undone.
+            </DialogContentText>
+            {resetState.error && (
+              <Alert severity="warning" variant="outlined" sx={{ mt: 2 }}>
+                {resetState.error}
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button type="button" onClick={() => setResetOpen(false)}>
+              Keep my data
+            </Button>
+            <Button type="submit" color="warning" disabled={resetPending}>
+              {resetPending ? "Resetting..." : "Reset"}
             </Button>
           </DialogActions>
         </form>

@@ -38,9 +38,11 @@ function major(cents: number): string {
 export default function BucketsForm({
   initial,
   currencyCode,
+  onboarding = false,
 }: {
   initial: BucketsInitial;
   currencyCode: string;
+  onboarding?: boolean;
 }) {
   const [state, action, pending] = useActionState<BucketsState, FormData>(
     saveBuckets,
@@ -75,10 +77,12 @@ export default function BucketsForm({
 
   return (
     <form action={action}>
+      {onboarding && <input type="hidden" name="onboarding" value="1" />}
       <Stack spacing={2.5} sx={{ alignItems: "stretch" }}>
         <Typography variant="body1" color="text.secondary">
-          Set what to protect each pay cycle. Whatever is left after these becomes
-          your safe-to-spend.
+          {onboarding
+            ? "Choose what to protect each pay cycle. Whatever is left after these becomes your safe-to-spend. You can change these any time."
+            : "Set what to protect each pay cycle. Whatever is left after these becomes your safe-to-spend."}
         </Typography>
 
         {state.saved && (
@@ -141,7 +145,11 @@ export default function BucketsForm({
         )}
 
         <Button type="submit" variant="contained" size="large" disabled={pending}>
-          {pending ? "Saving..." : "Save my buckets"}
+          {pending
+            ? "Saving..."
+            : onboarding
+              ? "Save and continue"
+              : "Save my buckets"}
         </Button>
       </Stack>
     </form>

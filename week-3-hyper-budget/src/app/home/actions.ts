@@ -66,6 +66,31 @@ export async function clearMyData(
   return { ok: true, at: Date.now() };
 }
 
+// Reset to new user (testing). Wipes the signed-in person's buckets, bank connection,
+// accounts, transactions, and savings cushion so the onboarding flow can be tested
+// from scratch. Keeps their login. The deletes happen in the reset_to_new_user SQL
+// function, scoped to the signed-in user. On success the client sends them to the
+// first-run welcome, since they now have no buckets.
+export async function resetToNewUser(
+  _prev: ClearState,
+  _formData: FormData,
+): Promise<ClearState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please log in again." };
+
+  const { error } = await supabase.rpc("reset_to_new_user");
+  if (error) {
+    return { error: `Could not reset: ${error.message}` };
+  }
+
+  // Clear cached pages broadly so the no-buckets redirect takes effect.
+  revalidatePath("/", "layout");
+  return { ok: true, at: Date.now() };
+}
+
 export type SpendState = {
   ok?: boolean;
   error?: string;

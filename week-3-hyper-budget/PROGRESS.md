@@ -3,7 +3,30 @@
 A living record of what has been built, decided, and verified, and what is next.
 Updated as we go. Latest entry at the top of each section.
 
-Last updated: 2026-11-09
+Last updated: 2026-11-13
+
+---
+
+## Flow rework (2026-11-13)
+
+Reworked the new-user flow and added the brand logo (recorded in ADR 0014):
+
+- **Logo** added at `public/brand/` (full lockup, icon, mono). It now greets people on
+  the welcome screen (`/`) and sits at the top of the menu pane.
+- **Onboarding welcome (`/onboarding`)**: one calm first-run screen after sign up,
+  logo plus a plain three-step explanation, then on to bucket setup.
+- **Buckets-first**: new accounts set their own buckets before Home. Food & rent,
+  bills, and savings are required; minimum fun money stays optional. The bottom tabs
+  are hidden during first-time setup for one clear path.
+- **Connect on Home**: the old `/start` gate is gone. When no bank is linked, Home
+  itself shows a calm "Connect your bank" card in place of the numbers.
+- **Pane moved to the left**, with the logo at the top.
+- **Button copy**: "Log a spend" -> "Add a transaction", "Log income" -> "Add income",
+  and the confirmation now reads "Spent EUR X from [bucket]" (it was wrongly "Added ...
+  to", a QA catch, since a transaction takes money out).
+- **Testing tools** in the pane: "Clear my data" (clears history, keeps the bank) and
+  a new "Reset to new user" (wipes buckets, bank, and history so the onboarding path
+  can be re-walked). Reset runs `reset_to_new_user()`, scoped to the signed-in user.
 
 ---
 

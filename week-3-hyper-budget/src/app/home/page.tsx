@@ -49,15 +49,16 @@ export default async function HomePage({
     .order("name");
   const accounts = (accountsData ?? []) as ConnectedAccount[];
 
-  // Home is for connected people. Before a bank is linked, send them to the connect
-  // page so they are not looking at an empty Home.
-  if (accounts.length === 0) redirect("/start");
-
   const { data: bucketRows } = await supabase
     .from("buckets")
     .select("type,target_cents")
     .eq("user_id", user.id);
   const hasBuckets = (bucketRows ?? []).some((b) => (b.target_cents ?? 0) > 0);
+
+  // Buckets come first. If the person has not set them yet, send them through the
+  // first-run welcome (which leads to bucket setup). Once buckets are set, Home
+  // itself invites them to connect a bank.
+  if (!hasBuckets) redirect("/onboarding");
 
   // The real current-cycle figures (after this cycle's spending), computed in SQL via
   // current_cycle_summary. We read the actual amount LEFT in each bucket, not the
