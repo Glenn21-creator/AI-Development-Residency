@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { chargedFromLabel, parseSources, encodeSources } from "@/lib/spend-cascade";
 
 export async function logout() {
   const supabase = await createClient();
@@ -96,6 +97,7 @@ export type SpendState = {
   error?: string;
   loggedCents?: number;
   bucket?: string;
+  sourceLabel?: string; // the real bucket(s) the spend drew from, for the confirmation
   at?: number; // changes each success, so the UI can react to repeated logs
 };
 
@@ -131,6 +133,16 @@ export async function logSpend(
   };
   const category = bucket in categoryForBucket ? categoryForBucket[bucket] : null;
 
+  // The dialog also computes, from the cascade, which bucket(s) the money actually
+  // comes from and how much from each ("key:cents" pairs), so Recent activity can show
+  // the real split, not the bucket it was filed under. Sanitise via the shared parser;
+  // fall back to the chosen bucket for the whole amount.
+  const parsedSources = parseSources(String(formData.get("charged_from") ?? ""));
+  const chargedFrom =
+    parsedSources.length > 0
+      ? encodeSources(parsedSources)
+      : encodeSources([{ key: bucket, cents }]);
+
   const { data: acct } = await supabase
     .from("accounts")
     .select("id,currency")
@@ -152,6 +164,7 @@ export async function logSpend(
     currency,
     description: note,
     category, // chosen bucket, mapped to a recognised label (blank = fun)
+    charged_from: chargedFrom, // the real source bucket(s), for an honest activity log
     occurred_at: new Date().toISOString(),
     status: "settled",
     source: "manual",
@@ -161,7 +174,14 @@ export async function logSpend(
   revalidatePath("/home");
   revalidatePath("/savings");
   revalidatePath("/alerts");
-  return { ok: true, loggedCents: cents, bucket, at: Date.now() };
+  revalidatePath("/activity");
+  return {
+    ok: true,
+    loggedCents: cents,
+    bucket,
+    sourceLabel: chargedFromLabel(chargedFrom),
+    at: Date.now(),
+  };
 }
 
 // Log income by hand (money in). Useful for testing the math without the bank, and

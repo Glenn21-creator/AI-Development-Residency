@@ -7,6 +7,34 @@ Last updated: 2026-11-13
 
 ---
 
+## Honest spend sources (2026-11-13)
+
+Made spending show where the money really comes from (recorded as a second amendment
+to ADR 0010). The cascade math is unchanged; only its transparency improved:
+
+- **Pre-spend heads-up**: adding a transaction larger than its bucket holds now shows,
+  before you confirm, which bucket(s) it will draw from and how much from each, e.g.
+  "Your Fun money is empty this cycle. This EUR 300 will come from Bills (EUR 140) and
+  Food & rent (EUR 160). Your next income will top it back up." The button becomes
+  "Spend anyway". No warning when the amount fits, or on sample data.
+- **Confirmation** now names the real source ("Spent EUR 300 from Bills and Food &
+  rent"), not the bucket it was filed under.
+- **Recent activity** shows a chip per source bucket with its amount, so the log never
+  says money came from an empty bucket. Stored on the transaction as `charged_from`
+  (migration `20261113140000_transaction_charged_from.sql`).
+- The spend dialog's bucket field is reframed as a category ("What kind of spend?"),
+  since the app decides where the money comes from.
+- Shared cascade logic lives in `src/lib/spend-cascade.ts` (used by Home, the log-spend
+  action, and Recent activity, so all three agree).
+- Reviewed the savings-vs-overspend order and **kept it as decided** (fun -> savings ->
+  bills -> food & rent): a discretionary overspend uses savings before bills and food &
+  rent. Option B (protect savings, show "over budget" instead) was considered and not
+  built.
+
+Run the `charged_from` migration in Supabase once before logging spends.
+
+---
+
 ## Flow rework (2026-11-13)
 
 Reworked the new-user flow and added the brand logo (recorded in ADR 0014):

@@ -37,6 +37,12 @@ import {
   type SpendState,
   type ClearState,
 } from "./actions";
+import {
+  resolveSpendSources,
+  bucketDisplayName,
+  joinNames,
+  encodeSources,
+} from "@/lib/spend-cascade";
 
 export type Bucket = {
   key: string;
@@ -115,6 +121,8 @@ export default function HomeView({
   const [clearOpen, setClearOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [spendOpen, setSpendOpen] = useState(false);
+  const [spendAmount, setSpendAmount] = useState("");
+  const [spendBucket, setSpendBucket] = useState("fun");
   const [incomeOpen, setIncomeOpen] = useState(false);
   const [snack, setSnack] = useState<string | null>(null);
   const [spendState, spendAction, spendPending] = useActionState<SpendState, FormData>(
@@ -136,13 +144,64 @@ export default function HomeView({
   const show = (cents: number, code: string = displayCurrency) =>
     hidden ? "•••" : money(cents, code);
 
+  // Pre-spend heads-up and the real source of the money. We work out, from the
+  // cascade, which bucket(s) the spend actually draws from, so the warning, the
+  // confirmation, and Recent activity all tell the same truth. Only when we have real
+  // figures; never on sample data.
+  const spendCents = Math.round((Number(spendAmount.replace(",", ".")) || 0) * 100);
+  const remainingByKey: Record<string, number> = {
+    fun: Math.max(0, data.buckets.find((b) => b.key === "fun")?.amountCents ?? 0),
+    savings: Math.max(0, data.buckets.find((b) => b.key === "savings")?.amountCents ?? 0),
+    bills: Math.max(0, data.buckets.find((b) => b.key === "bills")?.amountCents ?? 0),
+    essentials: Math.max(
+      0,
+      data.buckets.find((b) => b.key === "essentials")?.amountCents ?? 0,
+    ),
+  };
+  const bucketRemaining = remainingByKey[spendBucket] ?? 0;
+  const willOverspend = real && spendCents > 0 && spendCents > bucketRemaining;
+
+  const { sources: spendSources, overspent: spendOverspent } =
+    real && spendCents > 0
+      ? resolveSpendSources(spendBucket, spendCents, remainingByKey)
+      : { sources: [], overspent: 0 };
+  // Record the real split (bucket + amount) so Recent activity shows it. When nothing
+  // resolves (for example before any income), fall back to the chosen bucket.
+  const chargedFromValue = encodeSources(
+    spendSources.length > 0 ? spendSources : [{ key: spendBucket, cents: spendCents }],
+  );
+
+  const spendWarningText = (() => {
+    const lead =
+      bucketRemaining <= 0
+        ? `Your ${bucketDisplayName(spendBucket)} is empty this cycle.`
+        : `Your ${bucketDisplayName(spendBucket)} has ${moneyExact(bucketRemaining, displayCurrency)} left this cycle.`;
+    // Name every bucket this spend touches, with how much comes from each.
+    const breakdown = joinNames(
+      spendSources.map(
+        (s) => `${bucketDisplayName(s.key)} (${moneyExact(s.cents, displayCurrency)})`,
+      ),
+    );
+    const coveredCents = spendCents - spendOverspent;
+    const body = breakdown
+      ? ` This ${moneyExact(coveredCents, displayCurrency)} will come from ${breakdown}.`
+      : "";
+    const tail =
+      spendOverspent > 0
+        ? ` ${moneyExact(spendOverspent, displayCurrency)} more would be over budget this cycle. Your next income will catch it up.`
+        : " Your next income will top it back up.";
+    return lead + body + tail;
+  })();
+
   // On each successful log, close the dialog and show a brief confirmation, so a
   // spend always gives feedback even when it is absorbed by a bucket.
   useEffect(() => {
     if (spendState.at && spendState.ok) {
       setSpendOpen(false);
+      setSpendAmount("");
+      setSpendBucket("fun");
       setSnack(
-        `Spent ${moneyExact(spendState.loggedCents ?? 0, displayCurrency)} from ${bucketLabel(spendState.bucket)}`,
+        `Spent ${moneyExact(spendState.loggedCents ?? 0, displayCurrency)} from ${spendState.sourceLabel || bucketLabel(spendState.bucket)}`,
       );
       // Re-fetch the server-rendered numbers so the screen reflects the new spend.
       router.refresh();
@@ -267,7 +326,11 @@ export default function HomeView({
                 variant="contained"
                 size="large"
                 fullWidth
-                onClick={() => setSpendOpen(true)}
+                onClick={() => {
+                  setSpendAmount("");
+                  setSpendBucket("fun");
+                  setSpendOpen(true);
+                }}
               >
                 Add a transaction
               </Button>
@@ -456,15 +519,18 @@ export default function HomeView({
                 type="number"
                 fullWidth
                 autoFocus
+                value={spendAmount}
+                onChange={(e) => setSpendAmount(e.target.value)}
                 slotProps={{ htmlInput: { min: 0, step: "0.01", inputMode: "decimal" } }}
               />
               <TextField
                 select
                 name="bucket"
-                label="Spend from"
-                defaultValue="fun"
+                label="What kind of spend?"
+                value={spendBucket}
+                onChange={(e) => setSpendBucket(e.target.value)}
                 fullWidth
-                helperText="Fun money is your everyday spending."
+                helperText="What it was for. We handle where the money comes from."
               >
                 <MenuItem value="fun">Fun money</MenuItem>
                 <MenuItem value="essentials">Food & rent</MenuItem>
@@ -472,13 +538,25 @@ export default function HomeView({
               </TextField>
               <TextField name="note" label="What was it? (optional)" fullWidth />
             </Stack>
+            <input type="hidden" name="charged_from" value={chargedFromValue} />
+
+            {willOverspend && (
+              <Alert severity="warning" variant="outlined" sx={{ mt: 2 }}>
+                {spendWarningText}
+              </Alert>
+            )}
           </DialogContent>
           <DialogActions>
             <Button type="button" onClick={() => setSpendOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="contained" disabled={spendPending}>
-              {spendPending ? "Saving..." : "Add it"}
+            <Button
+              type="submit"
+              variant="contained"
+              color={willOverspend ? "warning" : "primary"}
+              disabled={spendPending}
+            >
+              {spendPending ? "Saving..." : willOverspend ? "Spend anyway" : "Add it"}
             </Button>
           </DialogActions>
         </form>
