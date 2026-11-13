@@ -1,0 +1,13 @@
+<svg width="480" height="120" viewBox="0 0 480 120" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Hyper Budget</title>
+  <desc>The Hyper Budget app tile beside the Hyper Budget wordmark.</desc>
+  <g transform="translate(12,12)">
+    <rect x="0" y="0" width="96" height="96" rx="23" fill="#2E7D6B"/>
+    <rect x="28.8" y="26.4" width="7.8" height="43.2" rx="3.6" fill="#FFFFFF"/>
+    <rect x="59.4" y="26.4" width="7.8" height="43.2" rx="3.6" fill="#FFFFFF"/>
+    <rect x="33" y="43.8" width="30" height="8.4" rx="4.2" fill="#E8A33D"/>
+  </g>
+  <text x="128" y="76" font-family="Roboto, 'Segoe UI', system-ui, sans-serif" font-size="50" font-weight="600" letter-spacing="-0.5">
+    <tspan fill="#2E7D6B">Hyper</tspan><tspan fill="#1F2A2E"> Budget</tspan>
+  </text>
+</svg>
