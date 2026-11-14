@@ -17,3 +17,4 @@ past decisions are respected rather than quietly undone.
 - [0011](0011-savings-cushion-cycle-locking.md) Savings cushion as append-only cycle locking
 - [0012](0012-keep-both-cycle-allocations-and-cycle-summary.md) Keep both cycle_allocations (plan) and cycle_summary (net)
 - [0013](0013-disconnect-removes-synced-bank-data-only.md) Disconnecting a bank removes synced data, keeps the person's own data
+- [0014](0014-new-user-flow-onboarding-buckets-first.md) New-user flow: welcome, buckets-first, then connect on Home

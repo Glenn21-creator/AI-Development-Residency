@@ -82,3 +82,25 @@ Consequence: correctness now depends on label quality. Rich real-bank labels map
 precisely; the coarse sandbox (`purchase`, `bill_payment`, `credit`) maps bills but
 treats everything else as fun. The fun-first cascade from the original decision is
 retained, but it now acts only on the fun-side draw, not on every euro.
+
+## Amendment (2026-11-13): show which bucket a spend really came from
+
+The cascade means a spend can draw from a different bucket than the one it is filed
+under (for example, filed as fun but drawn from food & rent because fun was empty).
+Showing only the filed bucket was misleading: Recent activity could say "from Fun
+money" while fun money read empty.
+
+Revised decision: **surface the real source, in step with the cascade, wherever a
+spend is shown.** When logging a spend, the app computes which bucket(s) it actually
+draws from, and how much from each, following this same waterfall (chosen bucket
+first, then Fun money -> Savings -> Bills -> Food & rent). This drives three things:
+a pre-spend heads-up ("Your Fun money is empty this cycle. This EUR 300 will come
+from Bills (EUR 140) and Food & rent (EUR 160)..."), the confirmation, and Recent
+activity (a chip per source bucket with its amount). The split is recorded on the
+transaction (`charged_from`, as `key:cents` pairs) so the log stays truthful later.
+The manual spend dialog's bucket field is framed as a category ("What kind of
+spend?"), since the app, not the user, decides where the money comes from.
+
+The savings-vs-overspend order was reviewed here and **kept as decided** (fun ->
+savings -> bills -> food & rent); only its transparency changed, not the math.
+This is display and recording; the cascade and `apply_spending` are unchanged.

@@ -7,6 +7,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import { createClient } from "@/lib/supabase/server";
+import { chargedFromLabel, parseSources, bucketDisplayName } from "@/lib/spend-cascade";
 import BottomNav from "@/components/BottomNav";
 
 function money(cents: number, code: string) {
@@ -35,7 +36,7 @@ export default async function ActivityPage() {
 
   const { data: txnRows } = await supabase
     .from("transactions")
-    .select("id,amount_cents,description,category,occurred_at,source")
+    .select("id,amount_cents,description,category,charged_from,occurred_at,source")
     .eq("user_id", user.id)
     .order("occurred_at", { ascending: false })
     .limit(40);
@@ -86,14 +87,45 @@ export default async function ActivityPage() {
                           <Typography variant="body2" color="text.secondary">
                             {date}, {t.source === "manual" ? "logged by you" : "from your bank"}
                           </Typography>
-                          {!isIn && (
-                            <Chip
-                              size="small"
-                              variant="outlined"
-                              label={`From ${bucketName(t.category)}`}
-                              sx={{ mt: 0.5 }}
-                            />
-                          )}
+                          {!isIn &&
+                            (() => {
+                              const srcs = parseSources(
+                                t.charged_from as string | null,
+                              );
+                              // A split spend: one chip per bucket, with how much
+                              // came from each, so the log shows the real sources.
+                              if (srcs.length > 1) {
+                                return (
+                                  <Stack
+                                    direction="row"
+                                    sx={{ mt: 0.5, flexWrap: "wrap", gap: 0.5 }}
+                                  >
+                                    {srcs.map((s, i) => (
+                                      <Chip
+                                        key={i}
+                                        size="small"
+                                        variant="outlined"
+                                        label={`${bucketDisplayName(s.key)} ${money(
+                                          s.cents,
+                                          currency,
+                                        )}`}
+                                      />
+                                    ))}
+                                  </Stack>
+                                );
+                              }
+                              const name =
+                                chargedFromLabel(t.charged_from as string | null) ||
+                                bucketName(t.category);
+                              return (
+                                <Chip
+                                  size="small"
+                                  variant="outlined"
+                                  label={`From ${name}`}
+                                  sx={{ mt: 0.5 }}
+                                />
+                              );
+                            })()}
                         </Box>
                         <Typography
                           sx={{
