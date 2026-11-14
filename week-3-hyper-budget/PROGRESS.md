@@ -180,6 +180,20 @@ Each one, in plain English: what was wrong, how we fixed it, and what changed.
 
 Deploy and login fixes from the same day are recorded just above.
 
+**Fun money reported as one number (2026-11-14):** manual QA of `apply_spending`
+showed the fun floor and the discretionary remainder as two columns (for example
+`safe_to_spend_left` 0 next to `fun_floor_left` 5000), which read as a
+contradiction. Merged them in the reporting: `apply_spending` keeps `fun_floor_cents`
+as an input (call signature unchanged) but drains the floor with the discretionary
+part as one pot and returns a single `safe_to_spend_left` (floor-left +
+discretionary-left); `cycle_summary` / `current_cycle_summary` drop `fun_floor_left`
+and output a single `safe_to_spend` that already includes the floor. Amounts
+unchanged; only the reporting is unified.
+Edited the three function files in place (solo, hand-run project) and simplified the
+two app readers (`home` and `alerts`). Recorded as the 2026-11-14 amendment to ADR
+0010. Re-run the three functions in Supabase in order: apply_spending,
+cycle_summary, current_cycle_summary.
+
 ---
 
 ## The allocation engine: stages

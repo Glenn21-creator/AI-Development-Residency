@@ -104,3 +104,26 @@ spend?"), since the app, not the user, decides where the money comes from.
 The savings-vs-overspend order was reviewed here and **kept as decided** (fun ->
 savings -> bills -> food & rent); only its transparency changed, not the math.
 This is display and recording; the cascade and `apply_spending` are unchanged.
+
+## Amendment (2026-11-14): fun money is reported as one number
+
+The fun floor and the discretionary remainder are the same thing to the user, fun
+money, and were only ever shown added together on screen. But the engine reported
+them as two columns (`fun_floor_left` and `safe_to_spend_left`), which read as a
+contradiction in manual QA: you could see `safe_to_spend_left = 0` next to
+`fun_floor_left = 5000` when the real safe-to-spend was 5000.
+
+Decision: **report fun money as one number, while keeping the floor as an input.**
+`apply_spending` keeps `fun_floor_cents` as a separate parameter (it is 0 when the
+user sets no floor), so its call signature is unchanged, but it no longer returns a
+separate `fun_floor_left`: it drains the floor and the discretionary part as one pot
+and returns a single `safe_to_spend_left` = floor-left + discretionary-left.
+`cycle_summary` and `current_cycle_summary` likewise drop the `fun_floor_left`
+column and output one `safe_to_spend` that already includes the floor. The amounts
+are unchanged (still floor plus discretionary); only the reporting is unified, so
+every layer shows one honest safe-to-spend. The cascade order (fun money, then
+savings, then bills, then food and rent) is unchanged.
+
+`allocate_cycle` and `cycle_allocations` are left as they are: they still expose the
+funding split (including `fun_floor_funded`) for the gross-plan view. Only the
+after-spending reporting is merged.

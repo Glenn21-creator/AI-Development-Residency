@@ -4,6 +4,11 @@
 -- picks that one row, with the current-cycle date worked out in SQL so it matches
 -- how cycle_summary groups (no timezone mismatch with the app). Returns 0 rows when
 -- nothing has happened this cycle yet. Computed on read, calling user only.
+--
+-- safe_to_spend is the whole of fun money (floor + discretionary) as one number, to
+-- match cycle_summary; there is no separate fun_floor_left column (ADR 0010).
+
+drop function if exists public.current_cycle_summary();
 
 create or replace function public.current_cycle_summary()
 returns table (
@@ -12,7 +17,6 @@ returns table (
   spend_cents bigint,
   essentials_left bigint,
   bills_left bigint,
-  fun_floor_left bigint,
   savings_left bigint,
   safe_to_spend bigint,
   amount_overspent bigint
