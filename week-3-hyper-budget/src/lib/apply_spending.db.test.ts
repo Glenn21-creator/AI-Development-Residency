@@ -7,8 +7,13 @@ import pg from "pg";
 
 // Integration tests for the REAL apply_spending function, the overspend cascade.
 // Given a cycle's funded buckets and its total spending, it drains the spend in
-// reverse priority (safe-to-spend, then fun floor, then savings, then bills, then
-// food & rent) and reports what is left plus any amount_overspent.
+// reverse priority (FUN MONEY first, then savings, then bills, then food & rent) and
+// reports what is left plus any amount_overspent.
+//
+// Note (2026-11-14 change): fun money is now ONE number. The function still takes the
+// fun floor as a separate input, but it drains the floor and the discretionary part
+// together as one pot and returns a single safe_to_spend_left (= floor-left +
+// discretionary-left). There is no separate fun_floor_left column any more.
 //
 // Runs only when DATABASE_URL is set (GitHub Actions provides a throwaway Postgres);
 // otherwise the whole block is skipped so local `npm test` still passes.
@@ -50,6 +55,8 @@ describe(
 
     // Helper: call the real function and return its result as plain numbers.
     // Inputs are the five funded bucket amounts plus the total spend, all in cents.
+    // The fun floor is still passed in, but there is no fun_floor_left in the result:
+    // safe_to_spend_left already includes it.
     async function callApplySpending(
       essentialsCents: number,
       billsCents: number,
@@ -66,21 +73,20 @@ describe(
       return {
         essentialsLeft: Number(r.essentials_left),
         billsLeft: Number(r.bills_left),
-        funFloorLeft: Number(r.fun_floor_left),
         savingsLeft: Number(r.savings_left),
-        safeToSpendLeft: Number(r.safe_to_spend_left),
+        safeToSpendLeft: Number(r.safe_to_spend_left), // fun floor + discretionary, combined
         amountOverspent: Number(r.amount_overspent),
       };
     }
 
     // WORKED EXAMPLE (written together).
     // Cycle funded: food & rent 800, bills 200, fun floor 100, savings 100,
-    // safe-to-spend 300. The person spends 250, which is WITHIN safe-to-spend.
-    // So only safe-to-spend shrinks (300 - 250 = 50); everything else is untouched,
-    // and nothing is overspent.
-    test("a spend within safe-to-spend only touches safe-to-spend", async () => {
+    // safe-to-spend 300. Fun money is therefore 400 (floor 100 + discretionary 300).
+    // The person spends 250, which is WITHIN fun money. So only fun money shrinks
+    // (400 - 250 = 150); everything else is untouched, and nothing is overspent.
+    test("a spend within fun money only shrinks fun money", async () => {
       const a = await callApplySpending(80000, 20000, 10000, 10000, 30000, 25000);
-      assert.equal(a.safeToSpendLeft, 5000); // 300 - 250 = 50
+      assert.equal(a.safeToSpendLeft, 15000); // 400 - 250 = 150
       assert.equal(a.amountOverspent, 0);
       assert.equal(a.essentialsLeft, 80000); // food & rent untouched
       assert.equal(a.savingsLeft, 10000); // savings untouched
