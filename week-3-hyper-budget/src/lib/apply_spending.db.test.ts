@@ -92,6 +92,38 @@ describe(
       assert.equal(a.savingsLeft, 10000); // savings untouched
     });
 
-    // YOUR TURN: your tests go below here.
+    // Written by Glenn.
+    // Spend 450: drains all of fun money (400), then dips into savings.
+    test("a spend above fun money dips into savings", async () => {
+      const a = await callApplySpending(80000, 20000, 10000, 10000, 30000, 45000);
+      assert.equal(a.safeToSpendLeft, 0);
+      assert.equal(a.savingsLeft, 5000);
+      assert.equal(a.billsLeft, 20000);
+      assert.equal(a.essentialsLeft, 80000);
+      assert.equal(a.amountOverspent, 0);
+    });
+
+    // Written by Glenn.
+    // Spend 650: drains fun money and all of savings, then starts eating bills.
+    test("a spend that reaches bills leaves food & rent untouched", async () => {
+      const a = await callApplySpending(80000, 20000, 10000, 10000, 30000, 65000);
+      assert.equal(a.safeToSpendLeft, 0);
+      assert.equal(a.savingsLeft, 0);
+      assert.equal(a.billsLeft, 5000);
+      assert.equal(a.essentialsLeft, 80000);
+      assert.equal(a.amountOverspent, 0);
+    });
+
+    // Written by Glenn.
+    // Spend 1600: more than the whole 1500 pot. Everything drains, food & rent last,
+    // and the extra 100 is reported as overspent.
+    test("a spend beyond everything empties all buckets and reports the overspend", async () => {
+      const a = await callApplySpending(80000, 20000, 10000, 10000, 30000, 160000);
+      assert.equal(a.safeToSpendLeft, 0);
+      assert.equal(a.savingsLeft, 0);
+      assert.equal(a.billsLeft, 0);
+      assert.equal(a.essentialsLeft, 0);
+      assert.equal(a.amountOverspent, 10000); // spent 1600, pot 1500, over by 100
+    });
   },
 );
