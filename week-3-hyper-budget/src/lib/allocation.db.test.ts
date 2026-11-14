@@ -89,7 +89,7 @@ describe(
       assert.equal(a.essentialsFunded, 80000);
       assert.equal(a.billsFunded, 20000);
       assert.equal(a.savingsFunded, 10000);
-      assert.equal(safeToSpendDisplay(a), 190001); // DELIBERATE BREAK (should be 190000)
+      assert.equal(safeToSpendDisplay(a), 190000);
     });
 
     // Written by Glenn.
