@@ -1,0 +1,102 @@
+name: CI
+
+# Run on every push to any branch. This is the "runs on every push" the challenge asks
+# for: the trigger is a push.
+on:
+  push:
+
+jobs:
+  # 1. Lint: catches style problems and risky patterns.
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: week-3-hyper-budget
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Run eslint
+        run: npm run lint
+
+  # 2. Build: catches anything that breaks the production build (a smoke test).
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: week-3-hyper-budget
+    # Placeholder public env so `next build` can complete without the real Supabase
+    # project. These are disposable, non-secret values used only to let the build run.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Build the app
+        run: npm run build
+
+  # 3. Skills gate: fails the push if any Claude skill's SKILL.md is broken.
+  skills-gate:
+    name: Skills gate-check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: week-3-hyper-budget
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check the skills are valid
+        run: npm run check:skills
+
+  # 4. Database tests: run the REAL money functions against a throwaway Postgres.
+  db-tests:
+    name: Database tests (real money functions)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: week-3-hyper-budget
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hyperbudget_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/hyperbudget_test
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm ci
+      - name: Run the tests (connect to the real Postgres functions)
+        run: npm test

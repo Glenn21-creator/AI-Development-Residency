@@ -23,6 +23,11 @@ export default async function BucketsPage() {
     (buckets ?? []).map((b) => [b.type as string, (b.target_cents as number) ?? 0]),
   );
 
+  // First-time setup when no bucket has an amount yet. In that mode we guide the
+  // person through, hide the bottom tabs so there is one clear path, and send them
+  // on to Home after they save.
+  const onboarding = !(buckets ?? []).some((b) => (b.target_cents ?? 0) > 0);
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("currency,pay_frequency")
@@ -40,15 +45,19 @@ export default async function BucketsPage() {
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ py: 4, pb: 12 }}>
+      <Box sx={{ py: 4, pb: onboarding ? 4 : 12 }}>
         <Stack spacing={2}>
           <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-            Your buckets
+            {onboarding ? "Set your buckets" : "Your buckets"}
           </Typography>
-          <BucketsForm initial={initial} currencyCode={currencyCode} />
+          <BucketsForm
+            initial={initial}
+            currencyCode={currencyCode}
+            onboarding={onboarding}
+          />
         </Stack>
       </Box>
-      <BottomNav />
+      {!onboarding && <BottomNav />}
     </Container>
   );
 }

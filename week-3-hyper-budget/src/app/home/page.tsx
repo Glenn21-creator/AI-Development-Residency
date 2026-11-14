@@ -49,15 +49,16 @@ export default async function HomePage({
     .order("name");
   const accounts = (accountsData ?? []) as ConnectedAccount[];
 
-  // Home is for connected people. Before a bank is linked, send them to the connect
-  // page so they are not looking at an empty Home.
-  if (accounts.length === 0) redirect("/start");
-
   const { data: bucketRows } = await supabase
     .from("buckets")
     .select("type,target_cents")
     .eq("user_id", user.id);
   const hasBuckets = (bucketRows ?? []).some((b) => (b.target_cents ?? 0) > 0);
+
+  // Buckets come first. If the person has not set them yet, send them through the
+  // first-run welcome (which leads to bucket setup). Once buckets are set, Home
+  // itself invites them to connect a bank.
+  if (!hasBuckets) redirect("/onboarding");
 
   // The real current-cycle figures (after this cycle's spending), computed in SQL via
   // current_cycle_summary. We read the actual amount LEFT in each bucket, not the
@@ -72,7 +73,6 @@ export default async function HomePage({
   let overspentCents = 0;
   let essLeft = 0;
   let billsLeft = 0;
-  let funFloorLeft = 0;
   let savLeft = 0;
   const { data: cycleRows, error: cycleErr } = await supabase.rpc("current_cycle_summary");
   if (!cycleErr && Array.isArray(cycleRows) && cycleRows.length > 0) {
@@ -81,13 +81,13 @@ export default async function HomePage({
     overspentCents = toNum(row.amount_overspent);
     essLeft = toNum(row.essentials_left);
     billsLeft = toNum(row.bills_left);
-    funFloorLeft = toNum(row.fun_floor_left);
     savLeft = toNum(row.savings_left);
   }
 
-  // Fun money is the guaranteed fun floor plus the discretionary remainder. The
-  // floor is not a separate bucket; it just keeps some fun in a tight cycle.
-  const funTotal = (safeCents ?? 0) + funFloorLeft;
+  // safe_to_spend already includes the guaranteed fun floor (merged in SQL), so
+  // this single number is the whole of fun money. The floor is not a bucket; it is
+  // just the part of fun money kept safe in a tight cycle.
+  const funTotal = safeCents ?? 0;
 
   const useReal = hasBuckets && accounts.length > 0 && safeCents !== null;
 

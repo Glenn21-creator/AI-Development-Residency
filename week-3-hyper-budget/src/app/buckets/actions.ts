@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
@@ -31,6 +32,15 @@ export async function saveBuckets(
   const fun = toCents(formData.get("fun"));
   const savings = toCents(formData.get("savings"));
   const freq = formData.get("pay_frequency") === "weekly" ? "weekly" : "monthly";
+  const onboarding = formData.get("onboarding") === "1";
+
+  // Food & rent, bills, and savings must each have an amount. The minimum fun money
+  // is optional (0 is a valid choice). We keep the person's typed values on error.
+  if (essentials <= 0 || bills <= 0 || savings <= 0) {
+    return {
+      error: "Please set an amount for food & rent, bills, and savings.",
+    };
+  }
 
   await supabase.from("buckets").delete().eq("user_id", user.id);
   const { error } = await supabase.from("buckets").insert([
@@ -51,5 +61,11 @@ export async function saveBuckets(
   revalidatePath("/home");
   revalidatePath("/buckets");
   revalidatePath("/savings");
+
+  // First-time setup: once buckets are saved, go on to Home (where they connect a
+  // bank). Editing later from the Buckets tab just stays put with a saved message.
+  if (onboarding) {
+    redirect("/home");
+  }
   return { saved: true };
 }
