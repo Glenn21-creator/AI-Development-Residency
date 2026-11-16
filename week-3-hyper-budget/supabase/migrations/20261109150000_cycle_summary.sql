@@ -5,11 +5,18 @@
 -- unknown labels count as fun), lets each protected bucket absorb its own spending,
 -- and then runs the cascade (apply_spending) on the fun-side draw: discretionary
 -- spending plus any bucket's overflow (spending beyond its budget). The cascade
--- eats safe-to-spend, then the fun floor, then savings, then leftover bills, then
--- leftover food & rent, and reports amount_overspent for anything beyond all of it.
+-- eats fun money (the floor plus the discretionary remainder), then savings, then
+-- leftover bills, then leftover food & rent, and reports amount_overspent for
+-- anything beyond all of it.
+--
+-- safe_to_spend here is the WHOLE of fun money as one number; the fun floor is not
+-- reported separately, because it is not a separate bucket (ADR 0010). (An earlier
+-- version exposed a separate fun_floor_left column, which was confusing to read.)
 --
 -- Computed on read from transactions, buckets, and the label map (ADR 0005). Only
 -- the person's own rows (security invoker + auth.uid() + RLS). Money is whole cents.
+
+drop function if exists public.cycle_summary();
 
 create or replace function public.cycle_summary()
 returns table (
@@ -18,7 +25,6 @@ returns table (
   spend_cents bigint,
   essentials_left bigint,
   bills_left bigint,
-  fun_floor_left bigint,
   savings_left bigint,
   safe_to_spend bigint,
   amount_overspent bigint
@@ -67,7 +73,6 @@ as $$
     c.spend_cents,
     sp.essentials_left,
     sp.bills_left,
-    sp.fun_floor_left,
     sp.savings_left,
     sp.safe_to_spend_left,
     sp.amount_overspent
@@ -79,7 +84,7 @@ as $$
   cross join lateral public.apply_spending(
     greatest(0, a.essentials_funded - c.ess_spend),   -- food & rent left after its own spending
     greatest(0, a.bills_funded - c.bills_spend),      -- bills left after its own spending
-    a.fun_floor_funded,                               -- fun floor
+    a.fun_floor_funded,                               -- fun floor (a separate input)
     greatest(0, a.savings_funded - c.sav_spend),      -- savings left after its own spending
     a.safe_to_spend,                                  -- discretionary fun allowance
     c.fun_spend                                       -- the fun-side draw:

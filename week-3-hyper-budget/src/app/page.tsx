@@ -19,9 +19,12 @@ export default function Home() {
         }}
       >
         <Stack spacing={3} sx={{ alignItems: "flex-start" }}>
-          <Typography variant="overline" color="primary" sx={{ fontWeight: 700 }}>
-            Hyper Budget
-          </Typography>
+          <Box
+            component="img"
+            src="/brand/logo-full.svg"
+            alt="Hyper Budget"
+            sx={{ width: "100%", maxWidth: 280, height: "auto" }}
+          />
 
           <Typography variant="h3" component="h1" sx={{ fontWeight: 700 }}>
             Welcome. Let&apos;s make money feel calm.

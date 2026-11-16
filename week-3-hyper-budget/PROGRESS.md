@@ -3,7 +3,58 @@
 A living record of what has been built, decided, and verified, and what is next.
 Updated as we go. Latest entry at the top of each section.
 
-Last updated: 2026-11-09
+Last updated: 2026-11-13
+
+---
+
+## Honest spend sources (2026-11-13)
+
+Made spending show where the money really comes from (recorded as a second amendment
+to ADR 0010). The cascade math is unchanged; only its transparency improved:
+
+- **Pre-spend heads-up**: adding a transaction larger than its bucket holds now shows,
+  before you confirm, which bucket(s) it will draw from and how much from each, e.g.
+  "Your Fun money is empty this cycle. This EUR 300 will come from Bills (EUR 140) and
+  Food & rent (EUR 160). Your next income will top it back up." The button becomes
+  "Spend anyway". No warning when the amount fits, or on sample data.
+- **Confirmation** now names the real source ("Spent EUR 300 from Bills and Food &
+  rent"), not the bucket it was filed under.
+- **Recent activity** shows a chip per source bucket with its amount, so the log never
+  says money came from an empty bucket. Stored on the transaction as `charged_from`
+  (migration `20261113140000_transaction_charged_from.sql`).
+- The spend dialog's bucket field is reframed as a category ("What kind of spend?"),
+  since the app decides where the money comes from.
+- Shared cascade logic lives in `src/lib/spend-cascade.ts` (used by Home, the log-spend
+  action, and Recent activity, so all three agree).
+- Reviewed the savings-vs-overspend order and **kept it as decided** (fun -> savings ->
+  bills -> food & rent): a discretionary overspend uses savings before bills and food &
+  rent. Option B (protect savings, show "over budget" instead) was considered and not
+  built.
+
+Run the `charged_from` migration in Supabase once before logging spends.
+
+---
+
+## Flow rework (2026-11-13)
+
+Reworked the new-user flow and added the brand logo (recorded in ADR 0014):
+
+- **Logo** added at `public/brand/` (full lockup, icon, mono). It now greets people on
+  the welcome screen (`/`) and sits at the top of the menu pane.
+- **Onboarding welcome (`/onboarding`)**: one calm first-run screen after sign up,
+  logo plus a plain three-step explanation, then on to bucket setup.
+- **Buckets-first**: new accounts set their own buckets before Home. Food & rent,
+  bills, and savings are required; minimum fun money stays optional. The bottom tabs
+  are hidden during first-time setup for one clear path.
+- **Connect on Home**: the old `/start` gate is gone. When no bank is linked, Home
+  itself shows a calm "Connect your bank" card in place of the numbers.
+- **Pane moved to the left**, with the logo at the top.
+- **Button copy**: "Log a spend" -> "Add a transaction", "Log income" -> "Add income",
+  and the confirmation now reads "Spent EUR X from [bucket]" (it was wrongly "Added ...
+  to", a QA catch, since a transaction takes money out).
+- **Testing tools** in the pane: "Clear my data" (clears history, keeps the bank) and
+  a new "Reset to new user" (wipes buckets, bank, and history so the onboarding path
+  can be re-walked). Reset runs `reset_to_new_user()`, scoped to the signed-in user.
 
 ---
 
@@ -128,6 +179,20 @@ Each one, in plain English: what was wrong, how we fixed it, and what changed.
     latest migration in Supabase once before using the button.)
 
 Deploy and login fixes from the same day are recorded just above.
+
+**Fun money reported as one number (2026-11-14):** manual QA of `apply_spending`
+showed the fun floor and the discretionary remainder as two columns (for example
+`safe_to_spend_left` 0 next to `fun_floor_left` 5000), which read as a
+contradiction. Merged them in the reporting: `apply_spending` keeps `fun_floor_cents`
+as an input (call signature unchanged) but drains the floor with the discretionary
+part as one pot and returns a single `safe_to_spend_left` (floor-left +
+discretionary-left); `cycle_summary` / `current_cycle_summary` drop `fun_floor_left`
+and output a single `safe_to_spend` that already includes the floor. Amounts
+unchanged; only the reporting is unified.
+Edited the three function files in place (solo, hand-run project) and simplified the
+two app readers (`home` and `alerts`). Recorded as the 2026-11-14 amendment to ADR
+0010. Re-run the three functions in Supabase in order: apply_spending,
+cycle_summary, current_cycle_summary.
 
 ---
 

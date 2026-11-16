@@ -63,7 +63,7 @@ export default async function AlertsPage() {
   if (row) {
     const income = num(row.income_cents);
     const overspent = num(row.amount_overspent);
-    const funRemaining = num(row.safe_to_spend) + num(row.fun_floor_left);
+    const funRemaining = num(row.safe_to_spend); // already includes the fun floor
 
     // The funded fun allowance for this cycle (before spending), via allocate_cycle.
     const { data: allocRows } = await supabase.rpc("allocate_cycle", {

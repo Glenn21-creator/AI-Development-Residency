@@ -35,10 +35,11 @@ export async function authenticate(
           "Account created. Check your email to confirm, then come back and log in.",
       };
     }
-    // Clear the client router cache so /home is fetched fresh with the new
+    // Clear the client router cache so the next page is fetched fresh with the new
     // session, otherwise a stale logged-out page can bounce you back to login.
     revalidatePath("/", "layout");
-    redirect("/home");
+    // New accounts start with the first-run welcome, then set their buckets.
+    redirect("/onboarding");
   }
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
