@@ -34,6 +34,7 @@ import {
   logIncome,
   clearMyData,
   resetToNewUser,
+  deleteAccount,
   type SpendState,
   type ClearState,
 } from "./actions";
@@ -120,6 +121,7 @@ export default function HomeView({
   const [disconnectOpen, setDisconnectOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [spendOpen, setSpendOpen] = useState(false);
   const [spendAmount, setSpendAmount] = useState("");
   const [spendBucket, setSpendBucket] = useState("fun");
@@ -139,6 +141,10 @@ export default function HomeView({
   );
   const [resetState, resetAction, resetPending] = useActionState<ClearState, FormData>(
     resetToNewUser,
+    {},
+  );
+  const [deleteState, deleteAction, deletePending] = useActionState<ClearState, FormData>(
+    deleteAccount,
     {},
   );
   const show = (cents: number, code: string = displayCurrency) =>
@@ -495,6 +501,22 @@ export default function HomeView({
                 <ListItemText primary="Log out" />
               </ListItemButton>
             </form>
+            <Divider />
+            <ListItemButton
+              onClick={() => {
+                setMenuOpen(false);
+                setDeleteOpen(true);
+              }}
+            >
+              <ListItemText
+                primary="Delete account"
+                secondary="Permanently removes your account and all data."
+                slotProps={{
+                  primary: { sx: { color: "error.main" } },
+                  secondary: { sx: { fontSize: 12 } },
+                }}
+              />
+            </ListItemButton>
           </List>
         </Box>
       </Drawer>
@@ -667,6 +689,32 @@ export default function HomeView({
             </Button>
             <Button type="submit" color="warning" disabled={resetPending}>
               {resetPending ? "Resetting..." : "Reset"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)}>
+        <form action={deleteAction}>
+          <DialogTitle>Delete your account?</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              This permanently deletes your account and everything in it: your buckets,
+              settings, bank connection, accounts, transactions, and savings. You will
+              be signed out and taken back to the welcome screen. This cannot be undone.
+            </DialogContentText>
+            {deleteState.error && (
+              <Alert severity="warning" variant="outlined" sx={{ mt: 2 }}>
+                {deleteState.error}
+              </Alert>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button type="button" onClick={() => setDeleteOpen(false)}>
+              Keep my account
+            </Button>
+            <Button type="submit" color="error" disabled={deletePending}>
+              {deletePending ? "Deleting..." : "Delete account"}
             </Button>
           </DialogActions>
         </form>

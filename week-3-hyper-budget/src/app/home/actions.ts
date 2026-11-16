@@ -92,6 +92,31 @@ export async function resetToNewUser(
   return { ok: true, at: Date.now() };
 }
 
+// Delete account (FR-14): permanently delete the signed-in person's account and all
+// their data, then sign out and send them to the welcome page. The deletion is a
+// security-definer SQL function scoped to the signed-in user, so a person can only
+// delete their own account; deleting the auth user cascades to all their data.
+export async function deleteAccount(
+  _prev: ClearState,
+  _formData: FormData,
+): Promise<ClearState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please log in again." };
+
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) {
+    return { error: `Could not delete your account: ${error.message}` };
+  }
+
+  // The account is gone; clear the session and return to the welcome page.
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/");
+}
+
 export type SpendState = {
   ok?: boolean;
   error?: string;
