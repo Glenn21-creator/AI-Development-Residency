@@ -3,7 +3,32 @@
 A living record of what has been built, decided, and verified, and what is next.
 Updated as we go. Latest entry at the top of each section.
 
-Last updated: 2026-11-13
+Last updated: 2026-11-16
+
+---
+
+## MVP re-scope (2026-11-16)
+
+Building the MVP showed that several planned MVP features were too heavy for a first
+version and did not change the minimal test of the core bet. The owner deliberately
+trimmed the MVP. Recorded in the `mvp-scope` skill and summarised in
+`docs/mvp-v2-scope.md`.
+
+- **Kept in the MVP (mostly built):** bank sync (sandbox), auto-categorise, auth,
+  data safeguards (RLS + encryption), onboarding, automatic allocation, protected
+  food & rent floor, a simple bills bucket, fun bucket, real-time safe-to-spend,
+  fun-money threshold nudges, a basic savings goal, shame-free copy. Plus two cheap
+  retention touches to still build: one light celebration and a gentle re-entry
+  message.
+- **Deferred to MMP:** dated bills + early bill reminders + the full "due vs covered"
+  view (all need a dated-bills subsystem); per-bucket threshold alerts.
+- **Deferred to later:** forgotten-subscription flagging; push notifications (ADR
+  0009); automatic bank-connection keep-alive (manual reconnect is enough for the
+  sandbox MVP).
+- **Why:** the core bet (automatic, shame-free, low-upkeep budgeting with a
+  trustworthy safe-to-spend number) is already tested by what is built; the deferred
+  items are heavier mechanics or infrastructure. KPIs should be revised to match this
+  leaner scope (see the summary doc).
 
 ---
 

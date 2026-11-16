@@ -24,39 +24,71 @@ request falls outside this list, stop and ask the user before building it.
 
 Everything else is "later" or "not building." When in doubt, it is later.
 
-## MVP: build these first
+## Scope revision (2026-11-16)
+
+Building the MVP showed that several originally planned MVP features were too heavy
+for a first version, and did not change the minimal test of the core bet (an
+automatic, shame-free, low-upkeep system that keeps ADHD users who quit everything
+else). The MVP below is the revised, realistic scope. Items pulled out of the MVP are
+listed under "Deferred from the MVP" and moved to MMP or later. This was a deliberate
+re-scope by the owner, recorded so it is a choice, not drift.
+
+## MVP: build these first (revised)
 
 Core engine and data:
 
-- Automatic bank sync (connect through Plaid or open banking)
-- Pull and auto-categorize transactions
-- Keep bank connections alive, with a gentle reconnect when one breaks
-- Sign-up, login, and secure sessions
-- Encrypt and safeguard financial data; document the compliance baseline
-- First-run onboarding that reaches first value fast (built late in the MVP)
+- Automatic bank sync through the open-banking sandbox (TrueLayer). Built.
+- Pull and auto-categorize transactions by the bank's own label. Built.
+- Sign-up, login, and secure sessions. Built.
+- Safeguard financial data: Row-Level Security and Supabase encryption, plus a short
+  written compliance note. (Mostly built; the written note is light.)
+- First-run onboarding that reaches first value fast. Built.
+- A manual "reconnect" when a bank link breaks. (Automatic keep-alive is deferred.)
 
 The ADHD money mechanics:
 
-- Automatic allocation: income splits into buckets the moment it lands
-- A protected food-and-rent floor funded before any spending money
-- Bill buckets: set money aside for upcoming bills automatically
-- A guilt-free fun bucket inside allocation
-- A real-time safe-to-spend number
-- A "what is due versus what is covered" view
-- Threshold alerts at 50 percent and 80 percent of a bucket spent
-- Early bill reminders
-- Forgotten-subscription flagging (flag only, not cancel)
-- Basic savings goal (start and track one simple cushion goal)
+- Automatic allocation: income splits into buckets the moment it lands. Built.
+- A protected food-and-rent floor funded before any spending money. Built.
+- A simple bills bucket: a lump amount set aside each cycle. Built. (Dated bills and
+  reminders are deferred.)
+- A guilt-free fun bucket inside allocation. Built.
+- A real-time safe-to-spend number. Built.
+- Fun-money threshold nudges at 50 percent and 80 percent of the fun allowance. Built.
+  (Per-bucket thresholds are deferred.)
+- Basic savings goal: start and track one simple cushion goal. Built.
 
 The tone and feel:
 
-- A shame-free copy system used across the whole app
-- Bite-sized check-ins instead of daunting reviews
-- Small wins: light celebrations (for example a bill paid on time), no streaks
-- A gentle re-entry message after a gap
+- A shame-free copy system used across the whole app. Built.
+- Bite-sized screens instead of daunting reviews. Built.
+- Small wins: one light, calm celebration (for example a bucket funded or savings
+  growing), no streaks. (Cheap; keep in the MVP.)
+- A gentle re-entry message after a gap: a simple "welcome back, here is where you
+  stand." (Cheap; keep in the MVP.)
+
+## Deferred from the MVP (2026-11-16 re-scope)
+
+Pulled out of the MVP because they are heavy to build or are infrastructure, and they
+do not change the minimal test of the bet. Where each one now lives:
+
+- **Dated bills, early bill reminders, and the full "due versus covered" view** -> MMP.
+  All three depend on a dated-bills subsystem (due dates, a scheduler, reminder logic).
+  The simple bills bucket already protects the money for the MVP.
+- **Per-bucket threshold alerts (50/80 percent on every bucket)** -> MMP. The fun-money
+  nudge already covers the moment that matters most.
+- **Forgotten-subscription flagging** -> later. Needs recurring-transaction detection,
+  a feature of its own.
+- **Push notifications** -> later (see ADR 0009). The in-app nudges are enough for the
+  MVP; push is real delivery infrastructure.
+- **Automatic bank-connection keep-alive (stored token, background re-sync)** -> later.
+  Real security and infra work; manual reconnect is enough for a sandbox MVP.
 
 ## MMP: build at launch, not before
 
+- Dated bills with due dates, early bill reminders, and a full "due versus covered"
+  view (moved from the MVP on 2026-11-16)
+- Per-bucket threshold alerts at 50 and 80 percent of each bucket (moved from the MVP
+  on 2026-11-16; the fun-money nudge ships in the MVP)
 - Emergency cushion auto-save (save a set amount when income lands, show progress)
 - Partner sharing: optional shared view, a private fun bucket each, a heads-up
   before a purchase pushes over the agreed budget
