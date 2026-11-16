@@ -66,7 +66,24 @@ jobs:
       - name: Check the skills are valid
         run: npm run check:skills
 
-  # 4. Database tests: run the REAL money functions against a throwaway Postgres.
+  # 4. Security audit: fail if a dependency has a known high or critical vulnerability.
+  audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: week-3-hyper-budget
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Audit dependencies (fail on high or critical)
+        run: npm audit --audit-level=high
+
+  # 5. Database tests: run the REAL money functions against a throwaway Postgres.
   db-tests:
     name: Database tests (real money functions)
     runs-on: ubuntu-latest
