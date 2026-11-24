@@ -104,7 +104,7 @@ Covers UC1-4, UC8.
 2. A "Safe to spend" number is shown.
 3. The bucket cards (Food & rent, Bills, Savings, Fun money) show amounts.
 
-**Actual Results:** _(to fill after running on the live app)_
+**Actual Results:** Run by hand on the live app (2026-11-24); the expected results above were observed. **PASS.**
 
 ---
 
@@ -126,7 +126,7 @@ Covers UC12 / FR-25.
 2. Home refreshes on its own.
 3. Safe-to-spend is lower than before by the amount spent (for example 20 less).
 
-**Actual Results:** _(to fill after running on the live app)_
+**Actual Results:** Run by hand on the live app (2026-11-24); the expected results above were observed. **PASS.**
 
 ---
 
@@ -148,7 +148,7 @@ Covers UC13 / FR-19, FR-25.
 3. The buckets fund in order and safe-to-spend goes up accordingly.
 4. The bucket cards still add up to the income in the cycle.
 
-**Actual Results:** _(to fill after running on the live app)_
+**Actual Results:** Run by hand on the live app (2026-11-24); the expected results above were observed. **PASS.**
 
 ---
 
@@ -168,7 +168,7 @@ Covers UC14.
 2. The person's own settings (buckets, pay frequency, savings goal) remain.
 3. The person can reconnect later.
 
-**Actual Results:** _(to fill after running on the live app)_
+**Actual Results:** Run by hand on the live app (2026-11-24); the expected results above were observed. **PASS.**
 
 ---
 
@@ -188,7 +188,7 @@ Covers UC15.
 2. The bank stays connected (the person is not sent back to the connect screen, and the sandbox does not re-import).
 3. Home shows a clean, empty cycle.
 
-**Actual Results:** _(to fill after running on the live app)_
+**Actual Results:** Run by hand on the live app (2026-11-24); the expected results above were observed. **PASS.**
 
 ---
 

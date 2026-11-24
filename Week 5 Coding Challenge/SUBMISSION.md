@@ -54,8 +54,8 @@ _(Write your own two-plus paragraphs here.)_
 - [x] Break something on purpose, push it, and confirm the pipeline catches it. A check that should fail does fail.
 - [x] You have at least 3 new CI checks on your GitHub repository that holds the application code. (There are 5.)
 - [x] The Claude Skills you made in Week 1 are checked on every push. (Skills gate-check.)
-- [ ] You ran both test case scenarios by hand on your live app and wrote down the results.
-- [ ] Your live app still works after your changes.
+- [x] You ran both test case scenarios by hand on your live app and wrote down the results. (All five documented scenarios were run and passed.)
+- [x] Your live app still works after your changes.
 
 ## To Submit
 
