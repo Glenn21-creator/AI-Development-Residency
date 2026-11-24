@@ -8,6 +8,8 @@
 -- safe_to_spend is the whole of fun money (floor + discretionary) as one number, to
 -- match cycle_summary; there is no separate fun_floor_left column (ADR 0010).
 
+-- Dropped first so its column list can grow to match cycle_summary (set-aside and
+-- spent per protected bucket). Re-run this AFTER cycle_summary.
 drop function if exists public.current_cycle_summary();
 
 create or replace function public.current_cycle_summary()
@@ -19,7 +21,11 @@ returns table (
   bills_left bigint,
   savings_left bigint,
   safe_to_spend bigint,
-  amount_overspent bigint
+  amount_overspent bigint,
+  essentials_funded bigint,
+  essentials_spent bigint,
+  bills_funded bigint,
+  bills_spent bigint
 )
 language sql
 stable

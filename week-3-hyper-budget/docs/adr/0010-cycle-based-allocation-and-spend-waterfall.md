@@ -127,3 +127,14 @@ savings, then bills, then food and rent) is unchanged.
 `allocate_cycle` and `cycle_allocations` are left as they are: they still expose the
 funding split (including `fun_floor_funded`) for the gross-plan view. Only the
 after-spending reporting is merged.
+
+## Amendment (2026-11-24): gradual bucket usage on Home
+
+The old Home status "Covered / Not covered" was a single flag on whether a protected
+bucket had anything left, which wrongly read "Not covered" when a bill had actually
+been **paid** (the bucket drained to 0 by its own spending). `cycle_summary` and
+`current_cycle_summary` now also return, for food & rent and bills, how much was
+**set aside** (funded) and **spent** this cycle. Home shows a gradual usage bar plus a
+calm label with honest states: Set aside, part used, All used (paid), Over by X, and
+Not set aside (the genuine unfunded case). The cascade math is unchanged; this is only
+what the engine reports and how Home shows it.

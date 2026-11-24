@@ -9,6 +9,7 @@ import Chip from "@mui/material/Chip";
 import { createClient } from "@/lib/supabase/server";
 import { chargedFromLabel, parseSources, bucketDisplayName } from "@/lib/spend-cascade";
 import BottomNav from "@/components/BottomNav";
+import BackButton from "@/components/BackButton";
 
 function money(cents: number, code: string) {
   try {
@@ -57,9 +58,12 @@ export default async function ActivityPage() {
     <Container maxWidth="sm">
       <Box sx={{ py: 4, pb: 12 }}>
         <Stack spacing={2}>
-          <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
-            Recent activity
-          </Typography>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <BackButton />
+            <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
+              Recent activity
+            </Typography>
+          </Stack>
 
           {items.length === 0 ? (
             <Typography variant="body1" color="text.secondary">
