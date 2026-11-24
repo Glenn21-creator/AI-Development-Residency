@@ -7,6 +7,17 @@ Last updated: 2026-11-24
 
 ---
 
+## Tab loading states (2026-11-24)
+
+Usability fix from testing: tapping a bottom tab took ~2 seconds (server data fetch)
+with no sign anything was happening, so the app felt frozen. Added a `loading.tsx` to
+each tab route (Home, Buckets, Alerts, Savings, and Recent activity) that the App
+Router shows instantly: a calm skeleton (gentle shimmer, not a spinner) with the
+bottom nav kept visible and the tapped tab already highlighted. Shared
+`components/LoadingScreen.tsx`.
+
+---
+
 ## Usability fixes (2026-11-24)
 
 From manual exploratory testing:
