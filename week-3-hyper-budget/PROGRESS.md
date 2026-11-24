@@ -7,6 +7,37 @@ Last updated: 2026-11-16
 
 ---
 
+## Usability fixes + one-number alignment (2026-11-24)
+
+From manual exploratory testing:
+
+- **Back button** on secondary screens (Recent activity), for accessibility.
+- **Delete my account** (real, GDPR erasure): a pane action that removes the login and
+  all data via `delete_my_account` (cascades from auth.users), then goes to login.
+  Different from the testing "Reset to new user", which keeps the login.
+- **Gradual usage on Food & rent and Bills**: a used-of-set-aside bar plus honest
+  states (Set aside, part used, All used, Over by X, Not set aside), replacing the
+  misleading "Not covered" that fired even when a bill was paid. Needed new set-aside
+  and spent columns from `cycle_summary` / `current_cycle_summary`.
+- **One-number fun money, now in version control.** The "fun money as one number"
+  change (fun floor folded into safe-to-spend in `apply_spending`) had been applied to
+  Supabase by hand but never committed, so this branch's code clashed with the live
+  function (`column sp.fun_floor_left does not exist`). Brought `apply_spending`,
+  `cycle_summary`, `current_cycle_summary`, Home, and Alerts fully onto the one-number
+  model and committed it, ending the drift. Recorded as the 2026-11-24 amendment to
+  ADR 0010.
+- **Home slogan**: "Make money feel calm" (centered, bold) in place of "Your money,
+  sorted automatically".
+- Diagnosed the "numbers don't make sense after sandbox sync": the TrueLayer sandbox
+  labels (PURCHASE, ATM, DIRECT_DEBIT, BILL_PAYMENT) are coarse; only BILL_PAYMENT maps
+  to a bucket, so food & rent and savings get no spending and everything else lands in
+  fun. Known limitation (ADR 0010); real bank data maps properly.
+
+Re-run in Supabase, in order: `apply_spending`, `cycle_summary`,
+`current_cycle_summary`, then `delete_my_account`.
+
+---
+
 ## MVP re-scope (2026-11-16)
 
 Building the MVP showed that several planned MVP features were too heavy for a first

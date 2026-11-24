@@ -5,6 +5,10 @@
 -- how cycle_summary groups (no timezone mismatch with the app). Returns 0 rows when
 -- nothing has happened this cycle yet. Computed on read, calling user only.
 
+-- Dropped first so its column list can grow to match cycle_summary (set-aside and
+-- spent per protected bucket). Re-run this AFTER cycle_summary.
+drop function if exists public.current_cycle_summary();
+
 create or replace function public.current_cycle_summary()
 returns table (
   cycle_start date,
@@ -12,10 +16,13 @@ returns table (
   spend_cents bigint,
   essentials_left bigint,
   bills_left bigint,
-  fun_floor_left bigint,
   savings_left bigint,
   safe_to_spend bigint,
-  amount_overspent bigint
+  amount_overspent bigint,
+  essentials_funded bigint,
+  essentials_spent bigint,
+  bills_funded bigint,
+  bills_spent bigint
 )
 language sql
 stable

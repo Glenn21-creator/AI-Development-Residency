@@ -104,3 +104,26 @@ spend?"), since the app, not the user, decides where the money comes from.
 The savings-vs-overspend order was reviewed here and **kept as decided** (fun ->
 savings -> bills -> food & rent); only its transparency changed, not the math.
 This is display and recording; the cascade and `apply_spending` are unchanged.
+
+## Amendment (2026-11-24): fun money as one number, and gradual bucket usage
+
+Two changes, recorded because one of them had drifted (it was live in the database
+but never committed, which broke the engine on this branch until reconciled).
+
+**Fun money is one number.** `apply_spending` drained the discretionary safe-to-spend
+and the fun floor as two amounts and returned them separately (safe_to_spend_left and
+fun_floor_left). Side by side they read as a contradiction (safe-to-spend 0 next to a
+fun floor of 50) even though the real fun money was their sum. Now `apply_spending`
+drains them as **one pot** and returns a single `safe_to_spend_left` that already
+includes the floor; there is no `fun_floor_left` column. The call signature is
+unchanged (it still takes the floor as an input). `cycle_summary`,
+`current_cycle_summary`, Home, and Alerts all read the single number.
+
+**Gradual usage for the protected buckets.** The old Home status "Covered / Not
+covered" was a single flag on whether a bucket had anything left, which wrongly read
+"Not covered" when a bill had actually been **paid** (the bucket drained to 0 by its
+own spending). `cycle_summary` now also returns, for food & rent and bills, how much
+was **set aside** (funded) and **spent** this cycle. Home shows a gradual usage bar
+plus a calm label with honest states: Set aside, part used, All used (paid), Over by
+X, and Not set aside (the genuine unfunded case). The cascade math is unchanged; this
+is what the engine reports and how Home shows it.

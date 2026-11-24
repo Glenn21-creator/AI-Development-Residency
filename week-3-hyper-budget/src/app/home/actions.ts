@@ -92,6 +92,31 @@ export async function resetToNewUser(
   return { ok: true, at: Date.now() };
 }
 
+// Delete my account (real, permanent). Removes the signed-in person's login and all
+// their data via delete_my_account (which cascades from auth.users), then signs the
+// local session out and sends them to login. Unlike reset_to_new_user, there is no
+// coming back: the email and password are gone.
+export async function deleteMyAccount(
+  _prev: ClearState,
+  _formData: FormData,
+): Promise<ClearState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Please log in again." };
+
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) {
+    return { error: `Could not delete your account: ${error.message}` };
+  }
+
+  // The account is gone; clear the local session and go to login.
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/login");
+}
+
 export type SpendState = {
   ok?: boolean;
   error?: string;

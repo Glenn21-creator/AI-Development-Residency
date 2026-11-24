@@ -71,36 +71,56 @@ export default async function HomePage({
   };
   let safeCents: number | null = null;
   let overspentCents = 0;
-  let essLeft = 0;
-  let billsLeft = 0;
-  let funFloorLeft = 0;
   let savLeft = 0;
+  // Set-aside and spent for the two protected buckets you spend against, so each card
+  // can show a gradual "used of set aside" picture instead of a covered/not-covered
+  // badge that conflates "paid" with "never funded".
+  let essFunded = 0;
+  let essSpent = 0;
+  let billsFunded = 0;
+  let billsSpent = 0;
   const { data: cycleRows, error: cycleErr } = await supabase.rpc("current_cycle_summary");
   if (!cycleErr && Array.isArray(cycleRows) && cycleRows.length > 0) {
     const row = cycleRows[0] as Record<string, number | string>;
     safeCents = toNum(row.safe_to_spend);
     overspentCents = toNum(row.amount_overspent);
-    essLeft = toNum(row.essentials_left);
-    billsLeft = toNum(row.bills_left);
-    funFloorLeft = toNum(row.fun_floor_left);
     savLeft = toNum(row.savings_left);
+    essFunded = toNum(row.essentials_funded);
+    essSpent = toNum(row.essentials_spent);
+    billsFunded = toNum(row.bills_funded);
+    billsSpent = toNum(row.bills_spent);
   }
 
-  // Fun money is the guaranteed fun floor plus the discretionary remainder. The
-  // floor is not a separate bucket; it just keeps some fun in a tight cycle.
-  const funTotal = (safeCents ?? 0) + funFloorLeft;
+  // Fun money is one number: safe_to_spend already includes the guaranteed fun floor
+  // (folded in by apply_spending). The floor is fun money, not a separate bucket.
+  const funTotal = safeCents ?? 0;
 
   const useReal = hasBuckets && accounts.length > 0 && safeCents !== null;
 
-  // Honest status: there is money protected, or there is not. No false "Safe".
-  const protectedStatus = (
-    left: number,
-    full: string,
-    empty: string,
-  ): { status: string; statusKind: "safe" | "heads-up" } =>
-    left > 0
-      ? { status: full, statusKind: "safe" }
-      : { status: empty, statusKind: "heads-up" };
+  // Gradual usage for a protected bucket: how much was set aside, how much is used,
+  // and which state that puts it in. Lets the card show a bar and a calm label that
+  // tells "paid" apart from "never funded".
+  const usageFor = (funded: number, spent: number) => {
+    const left = Math.max(0, funded - spent);
+    const over = Math.max(0, spent - funded);
+    const state =
+      funded <= 0
+        ? "unfunded"
+        : over > 0
+          ? "over"
+          : spent <= 0
+            ? "unused"
+            : spent >= funded
+              ? "all-used"
+              : "partial";
+    return {
+      usedCents: spent,
+      fundedCents: funded,
+      leftCents: left,
+      overCents: over,
+      state,
+    } as const;
+  };
 
   const data: HomeData = useReal
     ? {
@@ -112,15 +132,15 @@ export default async function HomePage({
             key: "essentials",
             name: "Food & rent",
             note: "Set aside first, kept safe",
-            amountCents: essLeft,
-            ...protectedStatus(essLeft, "Safe", "Nothing set aside"),
+            amountCents: Math.max(0, essFunded - essSpent),
+            usage: usageFor(essFunded, essSpent),
           },
           {
             key: "bills",
             name: "Bills",
             note: "Held for upcoming bills",
-            amountCents: billsLeft,
-            ...protectedStatus(billsLeft, "Covered", "Not covered"),
+            amountCents: Math.max(0, billsFunded - billsSpent),
+            usage: usageFor(billsFunded, billsSpent),
           },
           {
             key: "savings",
