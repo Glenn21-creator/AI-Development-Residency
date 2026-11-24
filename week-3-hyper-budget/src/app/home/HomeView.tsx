@@ -53,6 +53,14 @@ export type Bucket = {
   status?: string;
   statusKind?: "safe" | "covered" | "heads-up";
   progress?: { current: number; target: number };
+  // Gradual usage for a protected bucket you spend against (food & rent, bills).
+  usage?: {
+    usedCents: number;
+    fundedCents: number;
+    leftCents: number;
+    overCents: number;
+    state: "unfunded" | "unused" | "partial" | "all-used" | "over";
+  };
 };
 
 export type HomeData = {
@@ -149,6 +157,25 @@ export default function HomeView({
   );
   const show = (cents: number, code: string = displayCurrency) =>
     hidden ? "•••" : money(cents, code);
+
+  // The calm, gradual label for a protected bucket's usage. "paid" (all used) and a
+  // bucket that was never funded read very differently, instead of one "Not covered".
+  const usageChip = (
+    u: NonNullable<Bucket["usage"]>,
+  ): { label: string; color: "success" | "warning" | "default" } => {
+    switch (u.state) {
+      case "unfunded":
+        return { label: "Not set aside", color: "warning" };
+      case "over":
+        return { label: `Over by ${show(u.overCents)}`, color: "warning" };
+      case "unused":
+        return { label: "Set aside", color: "success" };
+      case "all-used":
+        return { label: "All used", color: "default" };
+      default:
+        return { label: `${show(u.leftCents)} left`, color: "default" };
+    }
+  };
 
   // Pre-spend heads-up and the real source of the money. We work out, from the
   // cascade, which bucket(s) the spend actually draws from, so the warning, the
@@ -351,8 +378,12 @@ export default function HomeView({
             </Stack>
           )}
 
-          <Typography variant="overline" color="text.secondary">
-            Your money, sorted automatically
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            sx={{ display: "block", textAlign: "center", fontWeight: 700 }}
+          >
+            Make money feel calm
           </Typography>
 
           <Stack spacing={1.5}>
@@ -374,18 +405,49 @@ export default function HomeView({
                       <Typography sx={{ fontWeight: 700 }}>
                         {show(b.amountCents)}
                       </Typography>
-                      {b.status && (
+                      {b.usage ? (
                         <Chip
                           size="small"
-                          label={b.status}
-                          color={b.statusKind === "heads-up" ? "warning" : "success"}
+                          label={usageChip(b.usage).label}
+                          color={usageChip(b.usage).color}
                           variant="outlined"
                           sx={{ mt: 0.5 }}
                         />
+                      ) : (
+                        b.status && (
+                          <Chip
+                            size="small"
+                            label={b.status}
+                            color={b.statusKind === "heads-up" ? "warning" : "success"}
+                            variant="outlined"
+                            sx={{ mt: 0.5 }}
+                          />
+                        )
                       )}
                     </Box>
                   </Stack>
-                  {b.progress && (
+                  {b.usage && b.usage.fundedCents > 0 && (
+                    <Box sx={{ mt: 1.5 }}>
+                      <LinearProgress
+                        variant="determinate"
+                        aria-label={`${b.name} used`}
+                        color={b.usage.state === "over" ? "warning" : "primary"}
+                        value={Math.min(
+                          100,
+                          (b.usage.usedCents / b.usage.fundedCents) * 100,
+                        )}
+                        sx={{ height: 8, borderRadius: 4 }}
+                      />
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 0.5, display: "block" }}
+                      >
+                        {show(b.usage.usedCents)} of {show(b.usage.fundedCents)} used
+                      </Typography>
+                    </Box>
+                  )}
+                  {!b.usage && b.progress && (
                     <LinearProgress
                       variant="determinate"
                       aria-label={`${b.name} progress`}
@@ -699,9 +761,9 @@ export default function HomeView({
           <DialogTitle>Delete your account?</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              This permanently deletes your account and everything in it: your buckets,
-              settings, bank connection, accounts, transactions, and savings. You will
-              be signed out and taken back to the welcome screen. This cannot be undone.
+              This permanently deletes your account: your login (email and password)
+              and all your data. You cannot undo this, and you would need to sign up
+              again to use Hyper Budget. You will be taken to the login page.
             </DialogContentText>
             {deleteState.error && (
               <Alert severity="warning" variant="outlined" sx={{ mt: 2 }}>

@@ -3,7 +3,30 @@
 A living record of what has been built, decided, and verified, and what is next.
 Updated as we go. Latest entry at the top of each section.
 
-Last updated: 2026-11-13
+Last updated: 2026-11-24
+
+---
+
+## Usability fixes (2026-11-24)
+
+From manual exploratory testing:
+
+- **Back button** on secondary screens (Recent activity), for accessibility.
+- **Delete account** now returns to the **login** page (it removes the login and all
+  data). Separate from the testing "Reset to new user", which keeps the login.
+- **Gradual usage on Food & rent and Bills**: a used-of-set-aside bar plus honest
+  states (Set aside, part used, All used, Over by X, Not set aside), replacing the
+  misleading "Not covered" that fired even when a bill was paid. `cycle_summary` and
+  `current_cycle_summary` now also return set-aside and spent per protected bucket.
+- **Home slogan**: "Make money feel calm" (centered, bold) in place of "Your money,
+  sorted automatically".
+- Diagnosed the "numbers don't make sense after sandbox sync": the TrueLayer sandbox
+  labels (PURCHASE, ATM, DIRECT_DEBIT, BILL_PAYMENT) are coarse; only BILL_PAYMENT maps
+  to a bucket, so food & rent and savings get no spending and everything else lands in
+  fun. Known limitation (ADR 0010); real bank data maps properly.
+
+Run the updated `cycle_summary` and `current_cycle_summary` in Supabase (they gained
+set-aside and spent columns).
 
 ---
 

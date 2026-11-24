@@ -93,9 +93,10 @@ export async function resetToNewUser(
 }
 
 // Delete account (FR-14): permanently delete the signed-in person's account and all
-// their data, then sign out and send them to the welcome page. The deletion is a
+// their data, then sign out and send them to the login page. The deletion is a
 // security-definer SQL function scoped to the signed-in user, so a person can only
-// delete their own account; deleting the auth user cascades to all their data.
+// delete their own account; deleting the auth user cascades to all their data. Unlike
+// reset_to_new_user, there is no coming back: the email and password are gone.
 export async function deleteAccount(
   _prev: ClearState,
   _formData: FormData,
@@ -111,10 +112,10 @@ export async function deleteAccount(
     return { error: `Could not delete your account: ${error.message}` };
   }
 
-  // The account is gone; clear the session and return to the welcome page.
+  // The account is gone; clear the local session and go to login.
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/login");
 }
 
 export type SpendState = {

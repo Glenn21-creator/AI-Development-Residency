@@ -15,6 +15,16 @@
 --
 -- Computed on read from transactions, buckets, and the label map (ADR 0005). Only
 -- the person's own rows (security invoker + auth.uid() + RLS). Money is whole cents.
+--
+-- It also returns, for the two protected buckets you spend against (food & rent and
+-- bills), how much was set aside this cycle (funded) and how much was spent from it
+-- (spent), so the screen can show a gradual "used of set aside" picture instead of a
+-- misleading covered/not-covered badge.
+
+-- Dropped first because adding columns changes the return type. current_cycle_summary
+-- depends on this one, so it is dropped here too and recreated in its own migration.
+drop function if exists public.current_cycle_summary();
+drop function if exists public.cycle_summary();
 
 drop function if exists public.cycle_summary();
 
@@ -27,7 +37,11 @@ returns table (
   bills_left bigint,
   savings_left bigint,
   safe_to_spend bigint,
-  amount_overspent bigint
+  amount_overspent bigint,
+  essentials_funded bigint,
+  essentials_spent bigint,
+  bills_funded bigint,
+  bills_spent bigint
 )
 language sql
 stable
@@ -74,8 +88,12 @@ as $$
     sp.essentials_left,
     sp.bills_left,
     sp.savings_left,
-    sp.safe_to_spend_left,
-    sp.amount_overspent
+    sp.safe_to_spend_left,                -- fun money left (floor + discretionary, one pot)
+    sp.amount_overspent,
+    a.essentials_funded,                  -- food & rent set aside this cycle
+    c.ess_spend,                          -- food & rent spent this cycle
+    a.bills_funded,                       -- bills set aside this cycle
+    c.bills_spend                         -- bills spent this cycle
   from cycles c
   cross join targets tg
   cross join lateral public.allocate_cycle(
